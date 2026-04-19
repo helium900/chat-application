@@ -6,11 +6,11 @@ const USER_COLLECTION = "users";
 let heartbeatInterval = null;
 let lastUpdate = 0;
 let presenceErrorCount = 0;
-const MAX_PRESENCE_ERRORS = 5; // Allow more errors before warning
+const MAX_PRESENCE_ERRORS = 5; 
 
 
 const updateLastSeen = async (userID) => {
-// No hard block on errors, just throttle and log
+
 
     const now = new Date();
     const nowMs = now.getTime();
@@ -24,10 +24,10 @@ const updateLastSeen = async (userID) => {
             USER_COLLECTION,
             userID,
             {
-                lastSeen: now.getTime() // Using ms timestamp (Integer)
+                lastSeen: now.getTime() 
             }
         );
-        presenceErrorCount = 0; // Reset on success
+        presenceErrorCount = 0; 
     } catch (err) {
         presenceErrorCount++;
         if (presenceErrorCount % MAX_PRESENCE_ERRORS === 0) {
@@ -77,7 +77,7 @@ export const subscribeToPresence = (callback) => {
 export const getUserStatus = (lastSeen) => {
     if (!lastSeen) return "offline";
     
-    // Handle both timestamp numbers and ISO strings
+    
     const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : Date.parse(lastSeen);
     if (isNaN(lastSeenTime)) return "offline";
 
