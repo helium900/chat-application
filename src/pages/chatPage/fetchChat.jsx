@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { fetchChats, startNewChat, setActiveChat } from "../../store/chatSlice";
-
-
-
 import { startPresenceListener, stopPresenceListener } from "../../store/presenceSlice";
 import { startChatListener, stopChatListener } from "../../store/chatListener";
 import { setCurrentUserIdForListener, startGlobalMessageListener, stopGlobalMessageListener } from "../../store/messageListener";
@@ -22,9 +19,6 @@ const FetchChat = () => {
   useEffect(() => {
     dispatch(fetchChats());
 
-
-
-    
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -32,18 +26,18 @@ const FetchChat = () => {
     account.get().then((user) => {
       setCurrentUserIdForListener(user.$id);
       startChatListener(user.$id, dispatch);
-      startGlobalMessageListener(dispatch); 
-      dispatch(startPresenceListener()); 
-      startUserListener(dispatch); 
-      startPresence(user.$id); 
+      startGlobalMessageListener(dispatch);
+      dispatch(startPresenceListener());
+      startUserListener(dispatch);
+      startPresence(user.$id);
     }).catch(err => console.error("Could not start chat listener:", err));
 
     return () => {
       stopChatListener();
-      stopGlobalMessageListener(); 
-      dispatch(stopPresenceListener()); 
-      stopUserListener(); 
-      stopPresence(); 
+      stopGlobalMessageListener();
+      dispatch(stopPresenceListener());
+      stopUserListener();
+      stopPresence();
     };
   }, [dispatch]);
 
@@ -52,7 +46,6 @@ const FetchChat = () => {
     dispatch(setActiveChat(id));
     setIsSidebarOpen(false);
   };
-
 
   const handleChatStart = async (user) => {
     try {
@@ -67,7 +60,6 @@ const FetchChat = () => {
 
   return (
     <div className="dashboard-container" style={{ background: "var(--bg-app)" }}>
-      
       <aside className={`sidebar-fixed ${isSidebarOpen ? 'open' : ''}`} style={{ background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-light)" }}>
         <Sidebar
           selectedChatId={selectedChatId}
@@ -102,7 +94,13 @@ const FetchChat = () => {
 
         <div className="flex-1 relative overflow-hidden">
           {selectedChatId ? (
-            <MessageWindow chatId={selectedChatId} />
+            <MessageWindow 
+              chatId={selectedChatId} 
+              onBack={() => {
+                setSelectedChatId(null);
+                dispatch(setActiveChat(null));
+              }}
+            />
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 animate-slide-up">
               <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center text-5xl mb-6 shadow-2xl" style={{ background: "linear-gradient(135deg, var(--primary), var(--accent))", boxShadow: "0 10px 40px -10px rgba(168, 85, 247, 0.4)" }}>
