@@ -9,7 +9,7 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
 
-// ✅ Default Avatar
+
 export const getDefaultAvatar = (username) => {
   try {
     return avatars.getInitials(username).toString();
@@ -18,7 +18,7 @@ export const getDefaultAvatar = (username) => {
   }
 };
 
-// ✅ Get Avatar URL
+
 export const getAvatarUrl = (fileId, username) => {
   if (!fileId) return getDefaultAvatar(username);
   try {
@@ -29,7 +29,7 @@ export const getAvatarUrl = (fileId, username) => {
   }
 };
 
-// ✅ Upload Avatar
+
 export const uploadAvatar = async (file, userId, oldFileId) => {
   try {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -49,11 +49,11 @@ export const uploadAvatar = async (file, userId, oldFileId) => {
       }
     }
 
-    // upload new (Anyone can read avatars for search/profile visibility)
+   
     const res = await uploadMedia({
       file,
       members: [userId], 
-      isAvatar: true, // Signal to allow public read
+      isAvatar: true,
     });
 
     await databases.updateDocument(DB_ID, USER_COLLECTION, userId, {
@@ -66,7 +66,7 @@ export const uploadAvatar = async (file, userId, oldFileId) => {
   }
 };
 
-// ✅ Delete Avatar
+
 export const deleteAvatar = async (userId, fileId) => {
   try {
     if (fileId) {
