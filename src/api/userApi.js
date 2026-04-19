@@ -20,7 +20,6 @@ export const createUser = async (user) => {
     );
 };
 
-
 export const setUsername = async (userId, username) => {
     const normalized = username.trim().toLowerCase();
     if (!normalized) {
@@ -28,6 +27,19 @@ export const setUsername = async (userId, username) => {
     }
 
     try {
+        const existingUsers = await databases.listDocuments(
+            DB_ID,
+            USER_COLLECTION,
+            [Query.equal("username", normalized)]
+        );
+
+        if (existingUsers.documents.length > 0) {
+            const isOwnedByMe = existingUsers.documents.some(doc => doc.$id === userId);
+            if (!isOwnedByMe) {
+                throw new Error("Username already taken");
+            }
+        }
+
         const res = await databases.updateDocument(
             DB_ID,
             USER_COLLECTION,
@@ -40,6 +52,9 @@ export const setUsername = async (userId, username) => {
         return res;
 
     } catch (err) {
+        if (err.message === "Username already taken") {
+            throw err;
+        }
         if (err.code === 409) {
             throw new Error("Username already taken");
         }
@@ -47,14 +62,11 @@ export const setUsername = async (userId, username) => {
     }
 };
 
-
-
 export const searchUser = async (username) => {
     try {
         const normalized = username.trim().toLowerCase();
         if (!normalized) return [];
 
-      
         try {
             const res = await databases.listDocuments(
                 DB_ID,
@@ -64,7 +76,6 @@ export const searchUser = async (username) => {
             return res.documents;
         } catch (searchErr) {
             console.warn("Search with startsWith failed, trying exact match fallback", searchErr.message);
-          
             const res = await databases.listDocuments(
                 DB_ID,
                 USER_COLLECTION,
@@ -75,11 +86,9 @@ export const searchUser = async (username) => {
 
     } catch (err) {
         console.error("User search failed completely", err.message);
-        return []; 
+        return [];
     }
 };
-
-
 
 export const getUserByUsername = async (username) => {
     try {
@@ -104,7 +113,6 @@ export const getUserByUsername = async (username) => {
         throw new Error(err.message);
     }
 };
-
 
 export const getUserById = async (userID) => {
     try {
