@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchMessages, sendMessageThunk, clearError } from "../../store/messageSlice";
 import { startMessageListener, stopMessageListener } from "../../store/messageListener";
 import { togglePin, toggleBlock } from "../../store/chatSlice";
-
 import { getAvatarUrl } from "../../api/avatarApi";
 import { account } from "../../appwriteConfig";
 import UserModal from "../../components/UserModal";
 
-const MessageWindow = ({ chatId }) => {
+const MessageWindow = ({ chatId, onBack }) => {
   const dispatch = useDispatch();
   const messages = useSelector((state) => state.messages.messagesByChat[chatId]) || [];
   const chats = useSelector((state) => state.chats.chats);
@@ -39,7 +38,6 @@ const MessageWindow = ({ chatId }) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
- 
   useEffect(() => {
     if (messageError) {
       const timer = setTimeout(() => {
@@ -80,33 +78,42 @@ const MessageWindow = ({ chatId }) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: "var(--bg-chat)" }}>
-    
-      <header className="h-20 flex-shrink-0 flex items-center justify-between px-6 lg:px-10 z-20" style={{ background: "rgba(10,10,12,0.8)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border-light)" }}>
-        <div 
-          className="flex-1 flex items-center gap-4 cursor-pointer p-2 -ml-2 rounded-xl transition-all"
-          style={{ borderRadius: "12px" }}
-          onClick={() => setIsUserModalOpen(true)}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--primary-soft)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-        >
-          <div className="relative">
-            <img
-              src={getAvatarUrl(user.avatarFileID, user.username)}
-              alt=""
-              className="w-11 h-11 rounded-2xl object-cover shadow-sm"
-              style={{ border: "2px solid var(--border-light)" }}
-            />
-            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-black rounded-full transition-colors duration-500 ${
-              onlineUsers[otherUserId] === "online" ? "bg-green-500" : "bg-zinc-700"
-            }`}></div>
-          </div>
-          <div>
-            <h3 className="text-base font-bold leading-tight" style={{ color: "var(--text-main)" }}>{user.username || "User"}</h3>
-            <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500" 
-              style={{ color: onlineUsers[otherUserId] === "online" ? "#22c55e" : "var(--text-muted)" }}
+      <header className="h-20 flex-shrink-0 flex items-center justify-between px-4 lg:px-10 z-20" style={{ background: "rgba(10,10,12,0.8)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border-light)" }}>
+        <div className="flex items-center gap-1 lg:gap-4">
+          {onBack && (
+            <button 
+              onClick={onBack} 
+              className="lg:hidden p-2 -ml-2 text-2xl hover:bg-white/5 rounded-full transition-colors"
             >
-              {onlineUsers[otherUserId] === "online" ? "Online" : "Offline"}
-            </p>
+              ⬅️
+            </button>
+          )}
+          <div 
+            className="flex items-center gap-3 lg:gap-4 cursor-pointer p-2 rounded-xl transition-all"
+            style={{ borderRadius: "12px" }}
+            onClick={() => setIsUserModalOpen(true)}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--primary-soft)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            <div className="relative">
+              <img
+                src={getAvatarUrl(user.avatarFileID, user.username)}
+                alt=""
+                className="w-11 h-11 rounded-2xl object-cover shadow-sm"
+                style={{ border: "2px solid var(--border-light)" }}
+              />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-black rounded-full transition-colors duration-500 ${
+                onlineUsers[otherUserId] === "online" ? "bg-green-500" : "bg-zinc-700"
+              }`}></div>
+            </div>
+            <div>
+              <h3 className="text-base font-bold leading-tight" style={{ color: "var(--text-main)" }}>{user.username || "User"}</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500" 
+                style={{ color: onlineUsers[otherUserId] === "online" ? "#22c55e" : "var(--text-muted)" }}
+              >
+                {onlineUsers[otherUserId] === "online" ? "Online" : "Offline"}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -132,7 +139,6 @@ const MessageWindow = ({ chatId }) => {
         </div>
       </header>
 
-     
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 space-y-4 scroll-smooth scroll-area"
@@ -204,7 +210,6 @@ const MessageWindow = ({ chatId }) => {
         <div ref={bottomRef}></div>
       </div>
 
-     
       <footer className="p-4 flex-shrink-0 relative" style={{ background: "rgba(10,10,12,0.85)", backdropFilter: "blur(12px)", borderTop: "1px solid var(--border-light)" }}>
         {isBlockedByMe ? (
           <div className="flex items-center justify-center py-6 bg-red-900/10 rounded-2xl border border-red-900/20 animate-slide-up">
