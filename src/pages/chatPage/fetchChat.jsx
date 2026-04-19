@@ -61,17 +61,19 @@ const FetchChat = () => {
   return (
     <div className="dashboard-container" style={{ background: "var(--bg-app)" }}>
       <aside className={`sidebar-fixed ${isSidebarOpen ? 'open' : ''}`} style={{ background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-light)" }}>
+        <div className="lg:hidden flex justify-end p-4 pb-0">
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all active:scale-90"
+            style={{ background: "var(--primary-soft)", color: "var(--text-main)", border: "1px solid var(--border-light)" }}
+          >
+            ✕
+          </button>
+        </div>
         <Sidebar
           selectedChatId={selectedChatId}
           setSelectedChatId={handleSelectChat}
         />
-        <button 
-          onClick={() => setIsSidebarOpen(false)}
-          className="lg:hidden absolute top-6 right-[-45px] w-8 h-8 rounded-full shadow-lg flex items-center justify-center text-sm font-bold transition-all"
-          style={{ background: "var(--bg-card)", color: "var(--text-main)", border: "1px solid var(--border-light)" }}
-        >
-          ✕
-        </button>
       </aside>
       
       <main className="main-fixed" style={{ background: "var(--bg-app)" }}>
