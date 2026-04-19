@@ -14,10 +14,10 @@ export const signup = async ({ email, password }) => {
       password
     );
 
-    // ✅ Log in immediately to get the "users" role
+    
     await account.createEmailPasswordSession(email, password);
 
-    // ✅ Now create the user document as an authenticated user
+  
     await createUser({
       ...user,
       username: null
