@@ -19,7 +19,7 @@ const FILE_RULES = {
   },
   text: {
     types: ["text/plain", "text/csv", "application/json"],
-    maxSize: 10 * 1024 * 1024, // 10 MB limit for text files
+    maxSize: 10 * 1024 * 1024, 
   },
 };
 
@@ -50,12 +50,12 @@ export const uploadMedia = async ({ file, members = [], isAvatar = false }) => {
 
     let permissions = members.map((id) => Permission.read(Role.user(id)));
     
-    // ✅ Avatars MUST be publicly readable for search/profile cards
+   
     if (isAvatar) {
       permissions = [Permission.read(Role.any())];
     }
 
-    // Allow the first member (sender) to delete/update
+ 
     if (members[0]) {
       permissions.push(Permission.update(Role.user(members[0])));
       permissions.push(Permission.delete(Role.user(members[0])));
