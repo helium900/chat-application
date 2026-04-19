@@ -29,9 +29,26 @@ const MessageWindow = ({ chatId, onBack }) => {
 
   useEffect(() => {
     if (!chatId) return;
-    dispatch(fetchMessages({ chatId }));
-    startMessageListener(chatId, dispatch);
-    return () => stopMessageListener();
+
+    const setupConnection = () => {
+      dispatch(fetchMessages({ chatId }));
+      startMessageListener(chatId, dispatch);
+    };
+
+    setupConnection();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setupConnection();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopMessageListener();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [chatId, dispatch]);
 
   useEffect(() => {
