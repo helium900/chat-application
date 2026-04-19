@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getMessages, sendMessage } from "../api/messageApi";
 
-// ========================================
-// 🔥 FETCH MESSAGES
-// ========================================
+
 export const fetchMessages = createAsyncThunk(
   "messages/fetchMessages",
   async ({ chatId, lastMessageId }, { rejectWithValue }) => {
@@ -16,9 +14,7 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
-// ========================================
-// 🔥 SEND MESSAGE
-// ========================================
+
 export const sendMessageThunk = createAsyncThunk(
   "messages/sendMessage",
   async ({ chatId, text, file }, { rejectWithValue }) => {
@@ -31,18 +27,16 @@ export const sendMessageThunk = createAsyncThunk(
   }
 );
 
-// ========================================
-// 🔥 SLICE
-// ========================================
+
 const messageSlice = createSlice({
   name: "messages",
   initialState: {
-    messagesByChat: {}, // { chatId: [messages...] }
+    messagesByChat: {},
     loading: false,
     error: null,
   },
   reducers: {
-    // ✅ Handle Real-Time Incoming Messages
+ 
     realtimeMessageReceived: (state, action) => {
       const message = action.payload;
       const chatId = message.chatId;
@@ -61,7 +55,7 @@ const messageSlice = createSlice({
         state.messagesByChat[chatId].push(message);
       }
 
-      // 🛡️ Ensure messages are always sorted by date to fix out-of-order issues
+     
       state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     },
     clearError: (state) => {
@@ -70,7 +64,7 @@ const messageSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ================= FETCH =================
+     
       .addCase(fetchMessages.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -90,7 +84,7 @@ const messageSlice = createSlice({
           state.messagesByChat[chatId] = messages;
         }
 
-        // 🛡️ Global Sort
+     
         state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       })
       .addCase(fetchMessages.rejected, (state, action) => {
@@ -99,13 +93,13 @@ const messageSlice = createSlice({
           action.payload || action.error?.message || "Failed to fetch messages";
       })
 
-      // ================= SEND MESSAGE =================
+    
       .addCase(sendMessageThunk.pending, (state, action) => {
         state.loading = true;
         state.error = null;
         const { chatId, text, file } = action.meta.arg;
 
-        // Optimistic Message
+       
         const tempId = `temp-${Date.now()}`;
         if (!state.messagesByChat[chatId]) {
           state.messagesByChat[chatId] = [];
@@ -114,7 +108,7 @@ const messageSlice = createSlice({
           $id: tempId,
           chatId,
           text,
-          file, // ⚠️ Storing File object temporarily for Resend
+          file, 
           type: file ? "file" : "text",
           status: "sending",
           createdAt: new Date().toISOString(),
@@ -126,7 +120,7 @@ const messageSlice = createSlice({
         state.error = null;
         const { chatId, message } = action.payload;
 
-        // Replace temp message or add if not found
+       
         if (state.messagesByChat[chatId]) {
           const tempIndex = state.messagesByChat[chatId].findIndex(m => m.status === "sending" && m.text === message.text);
           if (tempIndex !== -1) {
@@ -134,7 +128,7 @@ const messageSlice = createSlice({
           } else {
             state.messagesByChat[chatId].push(message);
           }
-          // 🛡️ Global Sort
+        
           state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         }
       })
@@ -143,7 +137,7 @@ const messageSlice = createSlice({
         state.error = action.payload || action.error?.message || "Failed to send message";
         const { chatId } = action.meta.arg;
 
-        // Mark optimistic message as failed
+     
         if (state.messagesByChat[chatId]) {
           const tempIndex = state.messagesByChat[chatId].findLastIndex(m => m.status === "sending");
           if (tempIndex !== -1) {
