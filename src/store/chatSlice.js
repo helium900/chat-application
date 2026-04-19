@@ -13,9 +13,7 @@ import {
 
 
 
-// ========================================
-// 🔥 FETCH CHATS
-// ========================================
+
 export const fetchChats = createAsyncThunk(
   "chats/fetchChats",
   async (_, { dispatch, rejectWithValue }) => {
@@ -27,18 +25,18 @@ export const fetchChats = createAsyncThunk(
 
       const res = await getUserChats();
       
-      // Extract all unique user IDs from all chats
+     
       const userIds = new Set();
       res.forEach(chat => {
         (chat.members || []).forEach(id => userIds.add(id));
       });
       
-      // Dispatch fetchUser for each unique user so we have their avatars
+     
       userIds.forEach(id => dispatch(fetchUser(id)));
       
       await saveChatsToDB("default", res);
 
-      return res; // res is now already the sorted array
+      return res;
     } catch (err) {
       return rejectWithValue(err.message || "Failed to fetch chats");
     }
@@ -46,9 +44,6 @@ export const fetchChats = createAsyncThunk(
 );
 
 
-// ========================================
-// 📌 TOGGLE PIN
-// ========================================
 export const togglePin = createAsyncThunk(
   "chats/togglePin",
   async (chatId, { rejectWithValue }) => {
@@ -62,9 +57,7 @@ export const togglePin = createAsyncThunk(
 );
 
 
-// ========================================
-// 🚫 TOGGLE BLOCK
-// ========================================
+
 export const toggleBlock = createAsyncThunk(
   "chats/toggleBlock",
   async (chatId, { rejectWithValue }) => {
@@ -78,9 +71,7 @@ export const toggleBlock = createAsyncThunk(
 );
 
 
-// ========================================
-// 🗑 DELETE FOR ME
-// ========================================
+
 export const deleteForMe = createAsyncThunk(
   "chats/deleteForMe",
   async (chatId, { rejectWithValue }) => {
@@ -94,9 +85,6 @@ export const deleteForMe = createAsyncThunk(
 );
 
 
-// ========================================
-// ✅ CREATE CHAT
-// ========================================
 export const startNewChat = createAsyncThunk(
   "chats/startNewChat",
   async (otherUserId, { rejectWithValue }) => {
@@ -110,9 +98,7 @@ export const startNewChat = createAsyncThunk(
 );
 
 
-// ========================================
-// 🔥 SLICE
-// ========================================
+
 const chatSlice = createSlice({
   name: "chats",
   initialState: {
@@ -133,7 +119,7 @@ const chatSlice = createSlice({
     },
 
     setCachedChats: (state, action) => {
-      // Only set if we haven't loaded network data yet
+    
       if (state.chats.length === 0) {
         state.chats = action.payload;
       }
@@ -146,14 +132,14 @@ const chatSlice = createSlice({
       } else {
         state.chats.unshift(chat);
       }
-      // Re-sort chats by updatedAt
+    
       state.chats.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
     },
   },
 
   extraReducers: (builder) => {
 
-    // ================= FETCH =================
+ 
     builder
       .addCase(fetchChats.pending, (state) => {
         state.loading = true;
@@ -168,26 +154,26 @@ const chatSlice = createSlice({
         state.error = action.payload || action.error.message;
       });
 
-    // ================= PIN =================
+  
     builder
       .addCase(togglePin.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
 
-        // 🔄 Backup for rollback
+     
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
         }
-        // Note: Full optimistic update of pinnedBy requires userId, which isn't in slice state.
+       
       })
       .addCase(togglePin.fulfilled, (state, action) => {
         state.actionLoading = false;
         const updatedChat = action.payload;
         const chatId = action.meta.arg;
 
-        // ✅ Success: Remove backup
+     
         delete state.backups[chatId];
 
         state.chats = state.chats.map((chat) =>
@@ -199,7 +185,7 @@ const chatSlice = createSlice({
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
 
-        // ⏪ Rollback
+     
         if (state.backups[chatId]) {
           state.chats = state.chats.map((chat) =>
             chat.$id === chatId ? state.backups[chatId] : chat
@@ -208,14 +194,14 @@ const chatSlice = createSlice({
         }
       });
 
-    // ================= BLOCK =================
+  
     builder
       .addCase(toggleBlock.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
 
-        // 🔄 Backup for rollback
+       
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
@@ -226,7 +212,7 @@ const chatSlice = createSlice({
         const updatedChat = action.payload;
         const chatId = action.meta.arg;
 
-        // ✅ Success: Remove backup
+    
         delete state.backups[chatId];
 
         state.chats = state.chats.map((chat) =>
@@ -238,7 +224,7 @@ const chatSlice = createSlice({
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
 
-        // ⏪ Rollback
+       
         if (state.backups[chatId]) {
           state.chats = state.chats.map((chat) =>
             chat.$id === chatId ? state.backups[chatId] : chat
@@ -247,14 +233,14 @@ const chatSlice = createSlice({
         }
       });
 
-    // ================= DELETE FOR ME =================
+
     builder
       .addCase(deleteForMe.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
 
-        // 🔄 Optimistic Update: Backup & Remove
+      
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
@@ -265,10 +251,10 @@ const chatSlice = createSlice({
         state.actionLoading = false;
         const chatId = action.meta.arg;
 
-        // ✅ Success: Remove backup
+       
         delete state.backups[chatId];
         
-        // Already filtered in pending, but we can ensure it's removed
+       
         state.chats = state.chats.filter((chat) => chat.$id !== chatId);
       })
       .addCase(deleteForMe.rejected, (state, action) => {
@@ -276,14 +262,14 @@ const chatSlice = createSlice({
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
 
-        // ⏪ Rollback
+        
         if (state.backups[chatId]) {
           state.chats.push(state.backups[chatId]);
           delete state.backups[chatId];
         }
       });
 
-    // ================= CREATE =================
+  
     builder
       .addCase(startNewChat.pending, (state) => {
         state.actionLoading = true;
@@ -292,7 +278,7 @@ const chatSlice = createSlice({
       .addCase(startNewChat.fulfilled, (state, action) => {
         state.actionLoading = false;
         const newChat = action.payload;
-        // Check if chat already exists in list (avoid duplicates)
+       
         const exists = state.chats.find((c) => c.$id === newChat.$id);
         if (!exists) {
           state.chats.unshift(newChat);
