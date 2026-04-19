@@ -39,7 +39,7 @@ const MessageWindow = ({ chatId }) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // ✅ Auto-hide errors after 1 second
+ 
   useEffect(() => {
     if (messageError) {
       const timer = setTimeout(() => {
@@ -80,7 +80,7 @@ const MessageWindow = ({ chatId }) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: "var(--bg-chat)" }}>
-      {/* 🔝 HEADER */}
+    
       <header className="h-20 flex-shrink-0 flex items-center justify-between px-6 lg:px-10 z-20" style={{ background: "rgba(10,10,12,0.8)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border-light)" }}>
         <div 
           className="flex-1 flex items-center gap-4 cursor-pointer p-2 -ml-2 rounded-xl transition-all"
@@ -132,7 +132,7 @@ const MessageWindow = ({ chatId }) => {
         </div>
       </header>
 
-      {/* 💬 MESSAGES */}
+     
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 space-y-4 scroll-smooth scroll-area"
@@ -204,7 +204,7 @@ const MessageWindow = ({ chatId }) => {
         <div ref={bottomRef}></div>
       </div>
 
-      {/* ✉️ COMPOSER */}
+     
       <footer className="p-4 flex-shrink-0 relative" style={{ background: "rgba(10,10,12,0.85)", backdropFilter: "blur(12px)", borderTop: "1px solid var(--border-light)" }}>
         {isBlockedByMe ? (
           <div className="flex items-center justify-center py-6 bg-red-900/10 rounded-2xl border border-red-900/20 animate-slide-up">
