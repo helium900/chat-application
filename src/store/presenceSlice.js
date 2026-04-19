@@ -4,9 +4,7 @@ import { subscribeToPresence, getUserStatus } from "../presence/presence";
 let unsubscribePresence = null;
 let reEvaluateInterval = null;
 
-// ========================================
-// 🔥 START LISTENER
-// ========================================
+
 export const startPresenceListener = createAsyncThunk(
   "presence/startListener",
   async (_, { dispatch }) => {
@@ -27,10 +25,10 @@ export const startPresenceListener = createAsyncThunk(
       }));
     });
 
-    // Periodically re-evaluate statuses to catch users who went offline
+    
     reEvaluateInterval = setInterval(() => {
       dispatch(reEvaluatePresence());
-    }, 10000); // Check every 10s
+    }, 10000); 
 
     return true;
   }
@@ -55,8 +53,8 @@ export const stopPresenceListener = createAsyncThunk(
 const presenceSlice = createSlice({
   name: "presence",
   initialState: {
-    lastSeenMap: {}, // { userId: timestamp }
-    onlineUsers: {}, // { userId: "online" | "offline" | "active" }
+    lastSeenMap: {},
+    onlineUsers: {},
     isSubscribed: false,
   },
   reducers: {
@@ -93,7 +91,7 @@ const presenceSlice = createSlice({
       state.isSubscribed = true;
     });
 
-    // ✅ Initialize presence when users are fetched from DB
+  
     builder.addCase("users/fetchUser/fulfilled", (state, action) => {
       const { userId, lastSeen } = action.payload;
       if (userId && lastSeen) {
