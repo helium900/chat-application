@@ -5,33 +5,33 @@
 @tailwind utilities;
 
 :root {
-  /* 🌑 Dark Black, Purple & Pink Palette */
+ 
   --bg-app: #050505;
-  /* Deep Black */
+ 
   --bg-card: #111114;
-  /* Dark Card */
+  
   --bg-sidebar: #0a0a0c;
-  /* Slightly lighter black */
+ 
   --bg-chat: #0f0f13;
-  /* Dark chat area */
+ 
 
   --primary: #a855f7;
-  /* Vibrant Purple */
+
   --primary-hover: #9333ea;
   --primary-light: rgba(168, 85, 247, 0.1);
   --primary-soft: #1a1a20;
 
   --accent: #ec4899;
-  /* Hot Pink */
+  
   --accent-hover: #db2777;
   --accent-light: rgba(236, 72, 153, 0.1);
 
   --text-main: #f8fafc;
-  /* Off-white */
+  
   --text-sub: #cbd5e1;
-  /* Light Grey */
+ 
   --text-muted: #94a3b8;
-  /* Muted Silver */
+ 
 
 
   --border-light: #1e1e24;
@@ -51,7 +51,7 @@
 }
 
 
-/* 🧱 FIXED CORE LAYOUT */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -71,7 +71,7 @@ body {
   width: 100%;
 }
 
-/* 📜 CUSTOM SCROLLBARS */
+
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -89,7 +89,7 @@ body {
   background: var(--border-active);
 }
 
-/* 🎯 REUSABLE DASHBOARD CLASSES */
+
 .dashboard-container {
   display: flex;
   height: 100vh;
@@ -128,7 +128,7 @@ body {
   overflow-x: hidden;
 }
 
-/* 📱 MOBILE RESPONSIVENESS */
+
 @media (max-width: 1024px) {
   .sidebar-fixed {
     position: absolute;
@@ -148,7 +148,7 @@ body {
   }
 }
 
-/* 🧩 COMPONENT STYLES */
+
 .glass-card {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
@@ -198,7 +198,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* 🎭 ANIMATIONS */
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -215,7 +215,7 @@ body {
   animation: slideUp 0.4s ease-out forwards;
 }
 
-/* MODAL SYSTEM */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
