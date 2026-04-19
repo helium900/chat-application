@@ -23,14 +23,27 @@ const FetchChat = () => {
       Notification.requestPermission();
     }
 
-    account.get().then((user) => {
-      setCurrentUserIdForListener(user.$id);
-      startChatListener(user.$id, dispatch);
-      startGlobalMessageListener(dispatch);
-      dispatch(startPresenceListener());
-      startUserListener(dispatch);
-      startPresence(user.$id);
-    }).catch(err => console.error("Could not start chat listener:", err));
+    const setupGlobalListeners = () => {
+      account.get().then((user) => {
+        setCurrentUserIdForListener(user.$id);
+        startChatListener(user.$id, dispatch);
+        startGlobalMessageListener(dispatch);
+        dispatch(startPresenceListener());
+        startUserListener(dispatch);
+        startPresence(user.$id);
+      }).catch(err => console.error("Could not start chat listener:", err));
+    };
+
+    setupGlobalListeners();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        dispatch(fetchChats());
+        setupGlobalListeners();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       stopChatListener();
@@ -38,6 +51,7 @@ const FetchChat = () => {
       dispatch(stopPresenceListener());
       stopUserListener();
       stopPresence();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [dispatch]);
 
@@ -61,15 +75,6 @@ const FetchChat = () => {
   return (
     <div className="dashboard-container" style={{ background: "var(--bg-app)" }}>
       <aside className={`sidebar-fixed ${isSidebarOpen ? 'open' : ''}`} style={{ background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-light)" }}>
-        <div className="lg:hidden flex justify-end p-4 pb-0">
-          <button 
-            onClick={() => setIsSidebarOpen(false)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all active:scale-90"
-            style={{ background: "var(--primary-soft)", color: "var(--text-main)", border: "1px solid var(--border-light)" }}
-          >
-            ✕
-          </button>
-        </div>
         <Sidebar
           selectedChatId={selectedChatId}
           setSelectedChatId={handleSelectChat}
