@@ -12,7 +12,7 @@ export const startUserListener = (dispatch) => {
     unsubscribe = client.subscribe(
         [`databases.${DB_ID}.collections.${USER_COLLECTION}.documents`],
         (response) => {
-            // Catch any update or create event on the user collection
+          
             if (response.events.some(e => e.includes(".documents.") && (e.includes(".update") || e.includes(".create")))) {
                 console.log("?? Profile Syncing:", response.payload.username || response.payload.$id);
                 dispatch(updateUser(response.payload));
