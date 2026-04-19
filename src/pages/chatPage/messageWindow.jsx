@@ -133,7 +133,7 @@ const MessageWindow = ({ chatId, onBack }) => {
               <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500" 
                 style={{ color: onlineUsers[otherUserId] === "online" ? "#22c55e" : "var(--text-muted)" }}
               >
-                {onlineUsers[otherUserId] === "online" ? "Offline" : "Offline"}
+                {onlineUsers[otherUserId] === "online" ? "Online" : "Offline"}
               </p>
             </div>
           </div>
