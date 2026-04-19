@@ -9,9 +9,6 @@ import {
 } from "../api/avatarApi";
 
 
-// ========================================
-// 🔥 FETCH USER
-// ========================================
 export const fetchUser = createAsyncThunk(
   "users/fetchUser",
   async (userId, { rejectWithValue }) => {
@@ -31,9 +28,7 @@ export const fetchUser = createAsyncThunk(
 
 
 
-// ========================================
-// 🔥 SET USERNAME
-// ========================================
+
 export const setUsernameThunk = createAsyncThunk(
   "users/setUsername",
   async ({ userId, username }, { rejectWithValue }) => {
@@ -51,9 +46,7 @@ export const setUsernameThunk = createAsyncThunk(
 );
 
 
-// ========================================
-// 🔥 UPLOAD AVATAR
-// ========================================
+
 export const uploadAvatarThunk = createAsyncThunk(
   "users/uploadAvatar",
   async ({ file, userId, oldFileId }, { rejectWithValue }) => {
@@ -71,9 +64,6 @@ export const uploadAvatarThunk = createAsyncThunk(
 );
 
 
-// ========================================
-// 🔥 DELETE AVATAR
-// ========================================
 export const deleteAvatarThunk = createAsyncThunk(
   "users/deleteAvatar",
   async ({ userId, fileId }, { rejectWithValue }) => {
@@ -90,13 +80,11 @@ export const deleteAvatarThunk = createAsyncThunk(
 );
 
 
-// ========================================
-// 🔥 SLICE
-// ========================================
+
 const userSlice = createSlice({
   name: "users",
   initialState: {
-    users: {}, // { userId: { username, avatarFileID, email } }
+    users: {}, 
     loading: false,
     error: null,
   },
@@ -112,7 +100,7 @@ const userSlice = createSlice({
           lastSeen: lastSeen || state.users[$id].lastSeen,
         };
       } else {
-        // If user not in state, add them
+       
         state.users[$id] = { $id, username, avatarFileID, lastSeen };
       }
     },
@@ -120,19 +108,19 @@ const userSlice = createSlice({
 
   extraReducers: (builder) => {
 
-    // ================= FETCH =================
+   
     builder.addCase(fetchUser.fulfilled, (state, action) => {
       const { userId, username, avatarFileID, email } = action.payload;
 
       state.users[userId] = {
-        $id: userId, // ✅ Preserving ID for updates
+        $id: userId, 
         username,
         avatarFileID,
         email,
       };
     });
 
-    // ================= USERNAME =================
+  
     builder.addCase(setUsernameThunk.fulfilled, (state, action) => {
       const { userId, username } = action.payload;
 
@@ -145,7 +133,7 @@ const userSlice = createSlice({
       state.error = action.payload;
     });
 
-    // ================= AVATAR =================
+  
     builder.addCase(uploadAvatarThunk.fulfilled, (state, action) => {
       const { userId, avatarFileID } = action.payload;
 
@@ -165,4 +153,4 @@ const userSlice = createSlice({
 });
 
 export const { updateUser } = userSlice.actions;
-export default userSlice.reducer;
+export default userSlice.reducer;
