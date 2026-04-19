@@ -1,4 +1,4 @@
-// api/chatApi.js
+
 import { databases, account, client } from "../appwriteConfig";
 import { Query, ID, Permission, Role } from "appwrite";
 
@@ -6,9 +6,7 @@ const DB_ID = "69d0f31d001e2eeda01b";
 const CHAT_COLLECTION = "chats";
 
 
-// ========================================
-// ✅ CREATE CHAT (WITH DUPLICATE CHECK)
-// ========================================
+
 export const createChat = async (otherUserId) => {
   try {
     const user = await account.get();
@@ -18,8 +16,7 @@ export const createChat = async (otherUserId) => {
       throw new Error("You cannot chat with yourself");
     }
 
-    // 🔍 1. Check if chat already exists
-    // Fallback: Get ALL chats and filter in JS if contains query fails
+  
     let existingDocs = [];
     try {
       const existing = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
@@ -51,7 +48,7 @@ export const createChat = async (otherUserId) => {
       return exactChat;
     }
 
-    // 🚀 2. Create new chat if not exists
+   
     const members = [currentUserId, otherUserId];
 
     return await databases.createDocument(
@@ -72,9 +69,7 @@ export const createChat = async (otherUserId) => {
 };
 
 
-// ========================================
-// ✅ GET USER CHATS (RELIABLE FALLBACK)
-// ========================================
+
 export const getUserChats = async () => {
   try {
     const user = await account.get();
@@ -82,21 +77,21 @@ export const getUserChats = async () => {
 
     let documents = [];
     try {
-      // Try index-based query first
+      
       const response = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
         Query.contains("members", userId),
       ]);
       documents = response.documents;
     } catch (err) {
       console.warn("Index for 'members' missing, fetching all chats and filtering in JS", err.message);
-      // Fallback: Fetch all chats (limited) and filter
+      
       const response = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
         Query.limit(100)
       ]);
       documents = response.documents.filter(doc => doc.members.includes(userId));
     }
 
-    // Filter hidden and sort manually in JS to avoid index requirement
+   
     return documents
       .filter(chat => !(chat.hiddenFor || []).includes(userId))
       .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
@@ -107,9 +102,7 @@ export const getUserChats = async () => {
 };
 
 
-// ========================================
-// ✅ DELETE CHAT FOR ME (HIDE)
-// ========================================
+
 export const deleteChatForMe = async (chatId) => {
   try {
     const user = await account.get();
@@ -139,9 +132,7 @@ export const deleteChatForMe = async (chatId) => {
 };
 
 
-// ========================================
-// 📌 TOGGLE PIN CHAT
-// ========================================
+
 export const togglePinChat = async (chatId) => {
   try {
     const user = await account.get();
@@ -174,9 +165,7 @@ export const togglePinChat = async (chatId) => {
 };
 
 
-// ========================================
-// 🚫 TOGGLE BLOCK CHAT
-// ========================================
+
 export const toggleBlockChat = async (chatId) => {
   try {
     const user = await account.get();
@@ -208,9 +197,7 @@ export const toggleBlockChat = async (chatId) => {
   }
 };
 
-// ========================================
-// ✅ REAL-TIME SUBSCRIPTION
-// ========================================
+
 export const subscribeToChats = (userId, callback) => {
   const unsubscribe = client.subscribe(
     `databases.${DB_ID}.collections.${CHAT_COLLECTION}.documents`,
