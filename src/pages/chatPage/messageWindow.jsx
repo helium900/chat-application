@@ -52,8 +52,13 @@ const MessageWindow = ({ chatId, onBack }) => {
   }, [chatId, dispatch]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    const timer = setTimeout(() => {
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [messages]);
 
   useEffect(() => {
     if (messageError) {
@@ -128,7 +133,7 @@ const MessageWindow = ({ chatId, onBack }) => {
               <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500" 
                 style={{ color: onlineUsers[otherUserId] === "online" ? "#22c55e" : "var(--text-muted)" }}
               >
-                {onlineUsers[otherUserId] === "online" ? "Online" : "Offline"}
+                {onlineUsers[otherUserId] === "online" ? "Offline" : "Offline"}
               </p>
             </div>
           </div>
