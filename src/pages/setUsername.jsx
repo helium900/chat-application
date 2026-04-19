@@ -106,8 +106,8 @@ const SetUsername = () => {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] px-4 py-12 relative overflow-hidden">
-      {/* CLEAN BACKGROUND */}
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] px-4 py-12 relative">
+    
 
       <div className="w-full max-w-md glass-card p-10 relative z-10 animate-slide-up text-center border-white/40">
         <div className="flex flex-col items-center mb-10">
