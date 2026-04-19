@@ -54,7 +54,7 @@ export const searchUser = async (username) => {
         const normalized = username.trim().toLowerCase();
         if (!normalized) return [];
 
-        // FALLBACK SEARCH: Try startsWith first, as it's more common than search (which requires fulltext)
+      
         try {
             const res = await databases.listDocuments(
                 DB_ID,
@@ -64,7 +64,7 @@ export const searchUser = async (username) => {
             return res.documents;
         } catch (searchErr) {
             console.warn("Search with startsWith failed, trying exact match fallback", searchErr.message);
-            // Last resort: exact match or just return empty
+          
             const res = await databases.listDocuments(
                 DB_ID,
                 USER_COLLECTION,
@@ -75,7 +75,7 @@ export const searchUser = async (username) => {
 
     } catch (err) {
         console.error("User search failed completely", err.message);
-        return []; // Return empty instead of throwing to prevent UI crash
+        return []; 
     }
 };
 
