@@ -6,35 +6,44 @@
 
 :root {
   /* 🌑 Dark Black, Purple & Pink Palette */
-  --bg-app: #050505;          /* Deep Black */
-  --bg-card: #111114;         /* Dark Card */
-  --bg-sidebar: #0a0a0c;      /* Slightly lighter black */
-  --bg-chat: #0f0f13;         /* Dark chat area */
-  
-  --primary: #a855f7;         /* Vibrant Purple */
+  --bg-app: #050505;
+  /* Deep Black */
+  --bg-card: #111114;
+  /* Dark Card */
+  --bg-sidebar: #0a0a0c;
+  /* Slightly lighter black */
+  --bg-chat: #0f0f13;
+  /* Dark chat area */
+
+  --primary: #a855f7;
+  /* Vibrant Purple */
   --primary-hover: #9333ea;
   --primary-light: rgba(168, 85, 247, 0.1);
   --primary-soft: #1a1a20;
-  
-  --accent: #ec4899;          /* Hot Pink */
+
+  --accent: #ec4899;
+  /* Hot Pink */
   --accent-hover: #db2777;
   --accent-light: rgba(236, 72, 153, 0.1);
 
-  --text-main: #f8fafc;       /* Off-white */
-  --text-sub: #cbd5e1;        /* Light Grey */
-  --text-muted: #94a3b8;      /* Muted Silver */
+  --text-main: #f8fafc;
+  /* Off-white */
+  --text-sub: #cbd5e1;
+  /* Light Grey */
+  --text-muted: #94a3b8;
+  /* Muted Silver */
 
-  
+
   --border-light: #1e1e24;
   --border-active: #3f3f46;
-  
+
   --shadow-fixed: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  
+
   --radius-max: 2.5rem;
   --radius-card: 1.25rem;
   --radius-input: 1rem;
-  
+
   font-family: 'Inter', sans-serif;
   background: var(--bg-app);
   color: var(--text-sub);
@@ -66,13 +75,16 @@ body {
 ::-webkit-scrollbar {
   width: 4px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-light);
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-active);
 }
@@ -147,18 +159,25 @@ body {
 
 .input-modern {
   width: 100%;
-  padding: 1rem 1.25rem;
+  padding: 1.2rem 1.5rem;
   border-radius: var(--radius-input);
-  border: 1px solid var(--border-light);
-  background: var(--primary-soft);
+  border: 2px solid #2d2d35;
+  background: #0a0a0c;
+  color: #ffffff !important;
+  font-size: 1rem;
   font-weight: 500;
   transition: all 0.2s ease;
   outline: none;
 }
 
 .input-modern:focus {
-  border-color: var(--text-main);
-  background: white;
+  border-color: var(--primary);
+  background: #111114;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.2);
+}
+
+.input-modern::placeholder {
+  color: #64748b;
 }
 
 .btn-primary {
@@ -181,8 +200,15 @@ body {
 
 /* 🎭 ANIMATIONS */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-slide-up {
@@ -247,11 +273,23 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.9) translateY(20px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
