@@ -10,14 +10,13 @@ export const startChatListener = (userId, dispatch) => {
   }
 
   unsubscribe = subscribeToChats(userId, (chat) => {
-    // If the chat was just deleted (hidden) by this user, ignore the real-time update
+   
     if (chat.hiddenFor && chat.hiddenFor.includes(userId)) {
       return;
     }
 
     dispatch(realtimeChatReceived(chat));
-    
-    // Make sure we have the other user's info loaded (for avatar/username)
+  
     chat.members.forEach(memberId => {
       if (memberId !== userId) {
         dispatch(fetchUser(memberId));
