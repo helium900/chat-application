@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login";
-import Signup from "./pages/signup"; // Fixed typo in filename
+import Signup from "./pages/signup"; 
 import FetchChat from "./pages/chatPage/fetchChat";
 import SetUsername from "./pages/setUsername";
 
