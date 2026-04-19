@@ -58,7 +58,11 @@ const messageSlice = createSlice({
         }
       }
 
-      state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      state.messagesByChat[chatId].sort((a, b) => {
+        const timeA = new Date(a.createdAt).getTime() || 0;
+        const timeB = new Date(b.createdAt).getTime() || 0;
+        return timeA - timeB;
+      });
     },
     clearError: (state) => {
       state.error = null;
@@ -85,7 +89,11 @@ const messageSlice = createSlice({
           state.messagesByChat[chatId] = messages;
         }
 
-        state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        state.messagesByChat[chatId].sort((a, b) => {
+          const timeA = new Date(a.createdAt).getTime() || 0;
+          const timeB = new Date(b.createdAt).getTime() || 0;
+          return timeA - timeB;
+        });
       })
       .addCase(fetchMessages.rejected, (state, action) => {
         state.loading = false;
@@ -106,7 +114,7 @@ const messageSlice = createSlice({
           $id: tempId,
           chatId,
           text,
-          file,
+          file, 
           type: file ? "file" : "text",
           status: "sending",
           createdAt: new Date().toISOString(),
@@ -131,7 +139,11 @@ const messageSlice = createSlice({
               state.messagesByChat[chatId].push(message);
             }
           }
-          state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          state.messagesByChat[chatId].sort((a, b) => {
+            const timeA = new Date(a.createdAt).getTime() || 0;
+            const timeB = new Date(b.createdAt).getTime() || 0;
+            return timeA - timeB;
+          });
         }
       })
       .addCase(sendMessageThunk.rejected, (state, action) => {
