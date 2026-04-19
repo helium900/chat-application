@@ -1,5 +1,4 @@
-// utils/indexedDB.js
-// Lightweight IndexedDB cache for messages
+
 
 const DB_NAME = "chatapp_db";
 const DB_VERSION = 2;
@@ -8,9 +7,6 @@ const CHATS_STORE_NAME = "chats";
 
 let db = null;
 
-// ========================================
-// 🔥 INIT DB
-// ========================================
 export const initDB = () => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -22,7 +18,7 @@ export const initDB = () => {
         database.createObjectStore(STORE_NAME, { keyPath: "chatId" });
       }
       if (!database.objectStoreNames.contains(CHATS_STORE_NAME)) {
-        // Store chats keyed by userId (since each user has their own chat list)
+      
         database.createObjectStore(CHATS_STORE_NAME, { keyPath: "userId" });
       }
     };
@@ -39,9 +35,7 @@ export const initDB = () => {
   });
 };
 
-// ========================================
-// 🔥 GET MESSAGES FROM DB
-// ========================================
+
 export const getMessagesFromDB = (chatId) => {
   return new Promise((resolve) => {
     if (!db) return resolve([]);
@@ -60,9 +54,7 @@ export const getMessagesFromDB = (chatId) => {
   });
 };
 
-// ========================================
-// 🔥 SAVE MESSAGES TO DB
-// ========================================
+
 export const saveMessagesToDB = (chatId, messages) => {
   return new Promise((resolve, reject) => {
     if (!db) return resolve();
@@ -76,9 +68,7 @@ export const saveMessagesToDB = (chatId, messages) => {
   });
 };
 
-// ========================================
-// 🔥 GET CHATS FROM DB
-// ========================================
+
 export const getChatsFromDB = (userId = "default") => {
   return new Promise((resolve) => {
     if (!db) return resolve([]);
@@ -97,9 +87,7 @@ export const getChatsFromDB = (userId = "default") => {
   });
 };
 
-// ========================================
-// 🔥 SAVE CHATS TO DB
-// ========================================
+
 export const saveChatsToDB = (userId = "default", chats) => {
   return new Promise((resolve, reject) => {
     if (!db) return resolve();
