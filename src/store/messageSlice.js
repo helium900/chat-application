@@ -31,12 +31,12 @@ export const sendMessageThunk = createAsyncThunk(
 const messageSlice = createSlice({
   name: "messages",
   initialState: {
-    messagesByChat: {},
+    messagesByChat: {}, 
     loading: false,
     error: null,
   },
   reducers: {
- 
+    
     realtimeMessageReceived: (state, action) => {
       const message = action.payload;
       const chatId = message.chatId;
@@ -52,10 +52,17 @@ const messageSlice = createSlice({
       if (existingIndex !== -1) {
         state.messagesByChat[chatId][existingIndex] = message;
       } else {
-        state.messagesByChat[chatId].push(message);
+        const tempIndex = state.messagesByChat[chatId].findIndex(
+          (m) => m.status === "sending" && m.text === message.text
+        );
+        if (tempIndex !== -1) {
+          state.messagesByChat[chatId][tempIndex] = message;
+        } else {
+          state.messagesByChat[chatId].push(message);
+        }
       }
 
-     
+      
       state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     },
     clearError: (state) => {
@@ -84,7 +91,7 @@ const messageSlice = createSlice({
           state.messagesByChat[chatId] = messages;
         }
 
-     
+       
         state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       })
       .addCase(fetchMessages.rejected, (state, action) => {
@@ -93,13 +100,13 @@ const messageSlice = createSlice({
           action.payload || action.error?.message || "Failed to fetch messages";
       })
 
-    
+     
       .addCase(sendMessageThunk.pending, (state, action) => {
         state.loading = true;
         state.error = null;
         const { chatId, text, file } = action.meta.arg;
 
-       
+        
         const tempId = `temp-${Date.now()}`;
         if (!state.messagesByChat[chatId]) {
           state.messagesByChat[chatId] = [];
@@ -120,15 +127,20 @@ const messageSlice = createSlice({
         state.error = null;
         const { chatId, message } = action.payload;
 
-       
         if (state.messagesByChat[chatId]) {
-          const tempIndex = state.messagesByChat[chatId].findIndex(m => m.status === "sending" && m.text === message.text);
-          if (tempIndex !== -1) {
-            state.messagesByChat[chatId][tempIndex] = message;
+          const existingRealtimeIndex = state.messagesByChat[chatId].findIndex(m => m.$id === message.$id);
+          
+          if (existingRealtimeIndex !== -1) {
+            state.messagesByChat[chatId][existingRealtimeIndex] = message;
           } else {
-            state.messagesByChat[chatId].push(message);
+            const tempIndex = state.messagesByChat[chatId].findIndex(m => m.status === "sending" && m.text === message.text);
+            if (tempIndex !== -1) {
+              state.messagesByChat[chatId][tempIndex] = message;
+            } else {
+              state.messagesByChat[chatId].push(message);
+            }
           }
-        
+          
           state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         }
       })
@@ -137,7 +149,7 @@ const messageSlice = createSlice({
         state.error = action.payload || action.error?.message || "Failed to send message";
         const { chatId } = action.meta.arg;
 
-     
+        
         if (state.messagesByChat[chatId]) {
           const tempIndex = state.messagesByChat[chatId].findLastIndex(m => m.status === "sending");
           if (tempIndex !== -1) {
