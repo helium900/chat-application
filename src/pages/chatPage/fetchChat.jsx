@@ -24,7 +24,7 @@ const FetchChat = () => {
 
 
 
-    // Request notification permission
+    
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -32,18 +32,18 @@ const FetchChat = () => {
     account.get().then((user) => {
       setCurrentUserIdForListener(user.$id);
       startChatListener(user.$id, dispatch);
-      startGlobalMessageListener(dispatch); // ✅ Start global unread tracker
-      dispatch(startPresenceListener()); // ✅ Start presence listener
-      startUserListener(dispatch); // ✅ Start user profile listener
-      startPresence(user.$id); // ✅ Start heartbeat
+      startGlobalMessageListener(dispatch); 
+      dispatch(startPresenceListener()); 
+      startUserListener(dispatch); 
+      startPresence(user.$id); 
     }).catch(err => console.error("Could not start chat listener:", err));
 
     return () => {
       stopChatListener();
-      stopGlobalMessageListener(); // ✅ Stop global unread tracker
-      dispatch(stopPresenceListener()); // ✅ Stop presence listener
-      stopUserListener(); // ✅ Stop user profile listener
-      stopPresence(); // ✅ Stop heartbeat
+      stopGlobalMessageListener(); 
+      dispatch(stopPresenceListener()); 
+      stopUserListener(); 
+      stopPresence(); 
     };
   }, [dispatch]);
 
@@ -67,7 +67,7 @@ const FetchChat = () => {
 
   return (
     <div className="dashboard-container" style={{ background: "var(--bg-app)" }}>
-      {/* 🧱 SIDEBAR */}
+      
       <aside className={`sidebar-fixed ${isSidebarOpen ? 'open' : ''}`} style={{ background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-light)" }}>
         <Sidebar
           selectedChatId={selectedChatId}
@@ -82,7 +82,6 @@ const FetchChat = () => {
         </button>
       </aside>
       
-      {/* 💬 MAIN CONTENT */}
       <main className="main-fixed" style={{ background: "var(--bg-app)" }}>
         <header className="h-20 flex-shrink-0 flex items-center justify-between px-6 lg:px-10 border-b z-50" style={{ background: "rgba(5,5,5,0.8)", backdropFilter: "blur(12px)", borderColor: "var(--border-light)" }}>
           <div className="flex items-center gap-3">
