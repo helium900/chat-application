@@ -55,7 +55,7 @@ const Sidebar = ({ selectedChatId, setSelectedChatId }) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ background: "transparent" }}>
-     
+      
       <div className="p-6 flex flex-col gap-4 flex-shrink-0" style={{ borderBottom: "1px solid var(--border-light)" }}>
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold tracking-tight" style={{ color: "var(--text-main)" }}>Chats</h2>
@@ -76,7 +76,7 @@ const Sidebar = ({ selectedChatId, setSelectedChatId }) => {
         </div>
       </div>
 
-    
+     
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scroll-area">
         {loading && (
           <div className="flex justify-center p-8">
@@ -204,7 +204,7 @@ const Sidebar = ({ selectedChatId, setSelectedChatId }) => {
         })}
       </div>
 
-     
+    
       {currentUserData && (
         <div className="p-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-light)" }}>
           <div className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-colors"
