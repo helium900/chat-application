@@ -1,6 +1,5 @@
 import { subscribeToMessages, subscribeToAllMessages } from "../api/messageApi";
 import { realtimeMessageReceived } from "./messageSlice";
-
 import { store } from "./store";
 import { account } from "../appwriteConfig";
 
@@ -28,12 +27,26 @@ export const startGlobalMessageListener = (dispatch) => {
   }
 
   unsubscribeGlobal = subscribeToAllMessages((message) => {
-   
     dispatch(realtimeMessageReceived(message));
+
+    const state = store.getState();
+    const chatExists = state.chats.chats.find(c => c.$id === message.chatId);
+
+    if (!chatExists) {
+      import("./chatSlice").then(({ fetchChats }) => {
+        dispatch(fetchChats());
+      });
+    } else {
+      import("./chatSlice").then(({ bumpChatTimestamp }) => {
+        dispatch(bumpChatTimestamp({
+          chatId: message.chatId,
+          updatedAt: message.createdAt,
+          lastMessage: message.text || message.type
+        }));
+      });
+    }
   });
-
 };
-
 
 export const stopMessageListener = () => {
   if (unsubscribe) {
