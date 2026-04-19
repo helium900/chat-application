@@ -10,12 +10,16 @@ const FILE_RULES = {
     maxSize: 100 * 1024 * 1024,
   },
   image: {
-    types: ["image/jpeg", "image/jpg", "image/png"],
-    maxSize: 5 * 1024 * 1024,
+    types: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
+    maxSize: 10 * 1024 * 1024,
   },
   pdf: {
     types: ["application/pdf"],
     maxSize: 50 * 1024 * 1024,
+  },
+  text: {
+    types: ["text/plain", "text/csv", "application/json"],
+    maxSize: 10 * 1024 * 1024, // 10 MB limit for text files
   },
 };
 
@@ -40,19 +44,27 @@ const validateFile = (file) => {
 };
 
 
-export const uploadMedia = async ({ file, senderId, receiverId }) => {
+export const uploadMedia = async ({ file, members = [], isAvatar = false }) => {
   try {
     const fileCategory = validateFile(file);
+
+    let permissions = members.map((id) => Permission.read(Role.user(id)));
+    
+    // ✅ Avatars MUST be publicly readable for search/profile cards
+    if (isAvatar) {
+      permissions = [Permission.read(Role.any())];
+    }
+
+    // Allow the first member (sender) to delete/update
+    if (members[0]) {
+      permissions.push(Permission.update(Role.user(members[0])));
+      permissions.push(Permission.delete(Role.user(members[0])));
+    }
 
     const res = await storage.createFile(
       BUCKET_ID,
       ID.unique(),
-      file,
-      [
-        Permission.read(Role.user(senderId)),
-        Permission.read(Role.user(receiverId)),
-        Permission.delete(Role.user(senderId)),
-      ] 
+      file
     );
 
     return {

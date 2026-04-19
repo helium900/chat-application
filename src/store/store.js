@@ -12,4 +12,8 @@ export const store = configureStore({
     presence: presenceReducer,
     messages: messageReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });

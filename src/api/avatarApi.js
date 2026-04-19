@@ -1,4 +1,4 @@
-import { databases, storage } from "../appwriteConfig";
+import { databases, storage, avatars } from "../appwriteConfig";
 import { deleteMedia, uploadMedia } from "./storageApi";
 
 const DB_ID = "69d0f31d001e2eeda01b";
@@ -11,15 +11,22 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
 
 // ✅ Default Avatar
 export const getDefaultAvatar = (username) => {
-  return `https://cloud.appwrite.io/v1/avatars/initials?name=${encodeURIComponent(
-    username
-  )}`;
+  try {
+    return avatars.getInitials(username).toString();
+  } catch {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(username || "U")}`;
+  }
 };
 
 // ✅ Get Avatar URL
 export const getAvatarUrl = (fileId, username) => {
   if (!fileId) return getDefaultAvatar(username);
-  return storage.getFileView(BUCKET_ID, fileId);
+  try {
+    // Add a timestamp to bypass browser caching when avatars update
+    return `${storage.getFileView(BUCKET_ID, fileId)}&t=${Date.now()}`;
+  } catch {
+    return getDefaultAvatar(username);
+  }
 };
 
 // ✅ Upload Avatar
@@ -35,14 +42,18 @@ export const uploadAvatar = async (file, userId, oldFileId) => {
 
     // delete old
     if (oldFileId) {
-      await deleteMedia(oldFileId);
+      try {
+        await deleteMedia(oldFileId);
+      } catch (err) {
+        console.warn("Failed to delete old avatar", err.message);
+      }
     }
 
-    // upload new (self access only or public)
+    // upload new (Anyone can read avatars for search/profile visibility)
     const res = await uploadMedia({
       file,
-      senderId: userId,
-      members: [userId], // or make public inside uploadMedia
+      members: [userId], 
+      isAvatar: true, // Signal to allow public read
     });
 
     await databases.updateDocument(DB_ID, USER_COLLECTION, userId, {

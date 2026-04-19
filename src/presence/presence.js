@@ -5,15 +5,18 @@ const USER_COLLECTION = "users";
 
 let heartbeatInterval = null;
 let lastUpdate = 0;
+let presenceErrorCount = 0;
+const MAX_PRESENCE_ERRORS = 5; // Allow more errors before warning
 
 
 const updateLastSeen = async (userID) => {
-    const now = Date.now();
+// No hard block on errors, just throttle and log
 
-
-    if (now - lastUpdate < 4000) return;
-
-    lastUpdate = now;
+    const now = new Date();
+    const nowMs = now.getTime();
+    
+    if (nowMs - lastUpdate < 4000) return;
+    lastUpdate = nowMs;
 
     try {
         await databases.updateDocument(
@@ -21,11 +24,15 @@ const updateLastSeen = async (userID) => {
             USER_COLLECTION,
             userID,
             {
-                lastSeen: now
+                lastSeen: now.getTime() // Using ms timestamp (Integer)
             }
         );
+        presenceErrorCount = 0; // Reset on success
     } catch (err) {
-        console.error("Presence update failed:", err.message);
+        presenceErrorCount++;
+        if (presenceErrorCount % MAX_PRESENCE_ERRORS === 0) {
+            console.error(`Presence heartbeat failing (${presenceErrorCount} errors):`, err.message);
+        }
     }
 };
 
@@ -34,7 +41,6 @@ export const startPresence = (userID) => {
     if (heartbeatInterval) return;
     
     updateLastSeen(userID);
-
 
     heartbeatInterval = setInterval(() => {
         updateLastSeen(userID);
@@ -69,13 +75,14 @@ export const subscribeToPresence = (callback) => {
 
 
 export const getUserStatus = (lastSeen) => {
-    const diff = Date.now() - lastSeen;
+    if (!lastSeen) return "offline";
+    
+    // Handle both timestamp numbers and ISO strings
+    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : Date.parse(lastSeen);
+    if (isNaN(lastSeenTime)) return "offline";
 
-    if (diff < 5000) return "online";
-    if (diff < 30000) return "active";
+    const diff = Date.now() - lastSeenTime;
+
+    if (diff < 35000) return "online"; 
     return "offline";
 };
-//The frontend calls subscribeToPresence
-//  to listen for real-time updates. When data changes,
-//  it receives the updated user, and then getUserStatus
-//  is used to decide what status (online, active, offline) to show.” and start presence stop presence handle the status in backend 

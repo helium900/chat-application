@@ -1,19 +1,58 @@
 // api/chatApi.js
-import { databases, account } from "./appwriteConfig";
-import { Query, ID } from "appwrite";
+import { databases, account, client } from "../appwriteConfig";
+import { Query, ID, Permission, Role } from "appwrite";
 
-const DB_ID = "chat-db";
+const DB_ID = "69d0f31d001e2eeda01b";
 const CHAT_COLLECTION = "chats";
 
 
 // ========================================
-// ✅ CREATE CHAT
+// ✅ CREATE CHAT (WITH DUPLICATE CHECK)
 // ========================================
 export const createChat = async (otherUserId) => {
   try {
     const user = await account.get();
+    const currentUserId = user.$id;
 
-    const members = [user.$id, otherUserId];
+    if (currentUserId === otherUserId) {
+      throw new Error("You cannot chat with yourself");
+    }
+
+    // 🔍 1. Check if chat already exists
+    // Fallback: Get ALL chats and filter in JS if contains query fails
+    let existingDocs = [];
+    try {
+      const existing = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
+        Query.contains("members", currentUserId),
+        Query.contains("members", otherUserId),
+      ]);
+      existingDocs = existing.documents;
+    } catch (err) {
+      console.warn("Index-based search failed, falling back to manual filter", err.message);
+      const all = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
+        Query.limit(100)
+      ]);
+      existingDocs = all.documents;
+    }
+
+    const exactChat = existingDocs.find(
+      (doc) => doc.members.length === 2 &&
+        doc.members.includes(currentUserId) &&
+        doc.members.includes(otherUserId)
+    );
+
+    if (exactChat) {
+      if ((exactChat.hiddenFor || []).includes(currentUserId)) {
+        const newHidden = exactChat.hiddenFor.filter(id => id !== currentUserId);
+        return await databases.updateDocument(DB_ID, CHAT_COLLECTION, exactChat.$id, {
+          hiddenFor: newHidden
+        });
+      }
+      return exactChat;
+    }
+
+    // 🚀 2. Create new chat if not exists
+    const members = [currentUserId, otherUserId];
 
     return await databases.createDocument(
       DB_ID,
@@ -21,10 +60,10 @@ export const createChat = async (otherUserId) => {
       ID.unique(),
       {
         members,
-        pinnedBy: [],
         hiddenFor: [],
+        pinnedBy: [],
         blockedUsers: [],
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     );
   } catch (err) {
@@ -34,26 +73,34 @@ export const createChat = async (otherUserId) => {
 
 
 // ========================================
-// ✅ GET USER CHATS
+// ✅ GET USER CHATS (RELIABLE FALLBACK)
 // ========================================
 export const getUserChats = async () => {
   try {
     const user = await account.get();
+    const userId = user.$id;
 
-    const response = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
-      Query.equal("members", user.$id),
-      Query.notEqual("hiddenFor", user.$id),
-      Query.orderDesc("updatedAt"),
-    ]);
+    let documents = [];
+    try {
+      // Try index-based query first
+      const response = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
+        Query.contains("members", userId),
+      ]);
+      documents = response.documents;
+    } catch (err) {
+      console.warn("Index for 'members' missing, fetching all chats and filtering in JS", err.message);
+      // Fallback: Fetch all chats (limited) and filter
+      const response = await databases.listDocuments(DB_ID, CHAT_COLLECTION, [
+        Query.limit(100)
+      ]);
+      documents = response.documents.filter(doc => doc.members.includes(userId));
+    }
 
-    // 🔥 Sort pinned chats to top (post-fetch, since Appwrite can't sort by array inclusion)
-    const sortedDocs = response.documents.sort((a, b) => {
-      const aPinned = a.pinnedBy?.includes(user.$id) ? 1 : 0;
-      const bPinned = b.pinnedBy?.includes(user.$id) ? 1 : 0;
-      return bPinned - aPinned;
-    });
+    // Filter hidden and sort manually in JS to avoid index requirement
+    return documents
+      .filter(chat => !(chat.hiddenFor || []).includes(userId))
+      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
 
-    return sortedDocs;
   } catch (err) {
     throw new Error(err.message || "Get chats failed");
   }
@@ -74,10 +121,6 @@ export const deleteChatForMe = async (chatId) => {
       chatId
     );
 
-    if (!chat.members.includes(userId)) {
-      throw new Error("Not authorized");
-    }
-
     const updatedHidden = Array.from(
       new Set([...(chat.hiddenFor || []), userId])
     );
@@ -91,10 +134,9 @@ export const deleteChatForMe = async (chatId) => {
       }
     );
   } catch (err) {
-    throw new Error(err.message || "Delete chat (me) failed");
+    throw new Error(err.message || "Delete chat failed");
   }
 };
-
 
 
 // ========================================
@@ -111,20 +153,11 @@ export const togglePinChat = async (chatId) => {
       chatId
     );
 
-    if (!chat.members.includes(userId)) {
-      throw new Error("Not authorized");
-    }
-
     let updatedPinned;
-
     if ((chat.pinnedBy || []).includes(userId)) {
-      // ❌ UNPIN
       updatedPinned = chat.pinnedBy.filter((id) => id !== userId);
     } else {
-      // ✅ PIN
-      updatedPinned = Array.from(
-        new Set([...(chat.pinnedBy || []), userId])
-      );
+      updatedPinned = Array.from(new Set([...(chat.pinnedBy || []), userId]));
     }
 
     return await databases.updateDocument(
@@ -155,20 +188,11 @@ export const toggleBlockChat = async (chatId) => {
       chatId
     );
 
-    if (!chat.members.includes(userId)) {
-      throw new Error("Not authorized");
-    }
-
     let updatedBlocked;
-
     if ((chat.blockedUsers || []).includes(userId)) {
-      // ❌ UNBLOCK
       updatedBlocked = chat.blockedUsers.filter((id) => id !== userId);
     } else {
-      // ✅ BLOCK
-      updatedBlocked = Array.from(
-        new Set([...(chat.blockedUsers || []), userId])
-      );
+      updatedBlocked = Array.from(new Set([...(chat.blockedUsers || []), userId]));
     }
 
     return await databases.updateDocument(
@@ -182,4 +206,25 @@ export const toggleBlockChat = async (chatId) => {
   } catch (err) {
     throw new Error(err.message || "Block toggle failed");
   }
+};
+
+// ========================================
+// ✅ REAL-TIME SUBSCRIPTION
+// ========================================
+export const subscribeToChats = (userId, callback) => {
+  const unsubscribe = client.subscribe(
+    `databases.${DB_ID}.collections.${CHAT_COLLECTION}.documents`,
+    (response) => {
+      const chat = response.payload;
+      if (
+        (response.events.includes("databases.*.collections.*.documents.*.create") ||
+         response.events.includes("databases.*.collections.*.documents.*.update")) &&
+        chat.members.includes(userId)
+      ) {
+        callback(chat);
+      }
+    }
+  );
+
+  return unsubscribe;
 };

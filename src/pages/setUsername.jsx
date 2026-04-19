@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { account } from "../appwriteConfig";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -30,118 +30,65 @@ const SetUsername = () => {
     return ["image/jpeg", "image/png", "image/jpg", "image/webp"].includes(file.type);
   };
 
-  // ✅ INIT (Redux based)
   useEffect(() => {
     const init = async () => {
       try {
         const authUser = await account.get();
         setUserId(authUser.$id);
-
         const res = await dispatch(fetchUser(authUser.$id));
-
-        if (res.meta.requestStatus === "rejected") {
-          throw new Error("Failed to fetch user");
-        }
+        if (res.meta.requestStatus === "rejected") throw new Error("Failed to fetch user");
 
         const dbUser = res.payload;
+        if (dbUser.username) navigate("/chat");
 
-        if (dbUser.username) {
-          navigate("/chat");
-        }
-
-        setPreview(
-          getAvatarUrl(dbUser.avatarFileID, dbUser.username || "User")
-        );
-      } catch (err) {
+        setPreview(getAvatarUrl(dbUser.avatarFileID, dbUser.username || "User"));
+      } catch {
         navigate("/login");
       } finally {
         setChecking(false);
       }
     };
-
     init();
-  }, []);
+  }, [dispatch, navigate]);
 
-  // ✅ Handle image select
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (!isValidImage(file)) {
       setError("Only image files allowed");
-      setPreview(null);
-      setAvatarFile(null);
       return;
     }
-
     setError("");
     setAvatarFile(file);
     setPreview(URL.createObjectURL(file));
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-
     const file = e.dataTransfer.files[0];
-    if (!file) return;
-
-    if (!isValidImage(file)) {
-      setError("Only image files allowed");
-      setPreview(null);
-      setAvatarFile(null);
-      return;
-    }
-
-    setError("");
+    if (!file || !isValidImage(file)) return;
     setAvatarFile(file);
     setPreview(URL.createObjectURL(file));
   };
 
-  // ✅ Submit (Redux)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // ✅ Step 1: set username
-      const res1 = await dispatch(
-        setUsernameThunk({ userId, username })
-      );
+      const res1 = await dispatch(setUsernameThunk({ userId, username }));
+      if (res1.meta.requestStatus === "rejected") throw new Error(res1.payload || "Username failed");
 
-      if (res1.meta.requestStatus === "rejected") {
-        throw new Error(res1.payload || "Username failed");
-      }
-
-      // ✅ Step 2: upload avatar (optional)
       if (avatarFile) {
         const oldAvatarId = users[userId]?.avatarFileID;
-
-        const res2 = await dispatch(
-          uploadAvatarThunk({
-            file: avatarFile,
-            userId,
-            oldFileId: oldAvatarId,
-          })
-        );
-
+        const res2 = await dispatch(uploadAvatarThunk({ file: avatarFile, userId, oldFileId: oldAvatarId }));
         if (res2.meta.requestStatus === "rejected") {
-          throw new Error(res2.payload || "Avatar upload failed");
+          throw new Error(res2.payload || "Failed to upload avatar");
         }
       }
-
       navigate("/chat");
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -149,97 +96,117 @@ const SetUsername = () => {
     }
   };
 
-  if (checking) return <p>Loading...</p>;
+  if (checking) return (
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="animate-spin h-10 w-10 border-4 border-[var(--primary)] border-t-transparent rounded-full"></div>
+        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Checking Profile...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: 400, margin: "auto", textAlign: "center" }}>
-      <h2>Setup Profile</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] px-4 py-12 relative overflow-hidden">
+      {/* CLEAN BACKGROUND */}
 
-      {/* ✅ Avatar Preview */}
-      {preview && (
-        <img
-          src={preview}
-          alt="avatar"
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: "50%",
-            objectFit: "cover",
-            marginBottom: 10,
-          }}
-        />
-      )}
+      <div className="w-full max-w-md glass-card p-10 relative z-10 animate-slide-up text-center border-white/40">
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-16 h-16 bg-[var(--primary)] text-white rounded-[1.5rem] flex items-center justify-center shadow-xl shadow-purple-500/30 mb-6">
+            <span className="text-4xl">✨</span>
+          </div>
+          <h2 className="text-4xl font-extrabold text-[var(--text-main)] mb-2 tracking-tight">Personalize</h2>
+          <p className="text-zinc-500 font-medium text-center">Set up your profile to start chatting</p>
+        </div>
 
-      {/* ✅ Drag & Drop */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        style={{
-          border: "2px dashed gray",
-          padding: 20,
-          borderRadius: 10,
-          background: dragging ? "#eee" : "transparent",
-          cursor: "pointer",
-          marginBottom: 10,
-        }}
-      >
-        <p>
-          {dragging
-            ? "Drop image here 👇"
-            : preview
-            ? "Change avatar"
-            : "Drag & drop avatar or click"}
+
+        <form onSubmit={handleSubmit} className="space-y-10">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative group">
+              <div
+                className={`w-36 h-36 rounded-2xl border-4 ${dragging ? 'border-[var(--primary)] bg-[var(--primary-soft)]' : 'border-black'} shadow-2xl overflow-hidden transition-all duration-300 transform group-hover:scale-105 group-hover:rotate-3`}
+
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+              >
+                {preview ? (
+                  <img src={preview} alt="avatar" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                ) : (
+                  <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-300 text-6xl">
+
+                  </div>
+                )}
+                <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer backdrop-blur-[2px]">
+                  <div className="flex flex-col items-center gap-2 text-white">
+                    <span className="text-2xl">📷</span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest">Update Photo</span>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                </label>
+              </div>
+              <div className="absolute -bottom-2 -right-2 bg-[var(--primary)] text-white p-2 rounded-xl shadow-lg border-2 border-black text-sm">
+                📷
+              </div>
+
+            </div>
+            <p className="text-[10px] text-zinc-500 uppercase font-extrabold tracking-[0.2em]">Profile Picture</p>
+          </div>
+
+
+          <div className="space-y-6">
+            <div className="space-y-2 group text-left">
+              <label className="text-sm font-bold text-zinc-400 ml-1 group-focus-within:text-[var(--primary)] transition-colors">Your Username</label>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="how do we call you?"
+                  className="input-modern"
+                  value={username}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-900/20 text-red-500 rounded-2xl text-sm font-bold flex items-center gap-3 border border-red-900/30 shadow-sm">
+                <span className="text-xl">⚠️</span>
+                {error}
+              </div>
+            )}
+
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn-primary py-5 text-lg"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span>Saving Profile...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">✅</span>
+                  <span>Complete Setup</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        <p className="text-center mt-10 text-zinc-500 font-medium text-sm">
+          Not your account?{" "}
+          <Link to="/login" className="text-[var(--primary)] hover:underline font-bold transition-colors">
+            Switch Account
+          </Link>
         </p>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-          id="fileInput"
-        />
-
-        <label htmlFor="fileInput" style={{ color: "blue", cursor: "pointer" }}>
-          Choose File
-        </label>
       </div>
-
-      {/* ✅ Form */}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter username"
-          value={username}
-          onChange={(e) => setUsernameInput(e.target.value)}
-          disabled={loading}
-          required
-          style={{
-            width: "100%",
-            padding: 10,
-            marginBottom: 10,
-          }}
-        />
-
-        {/* ✅ ERROR ABOVE BUTTON */}
-        {error && (
-          <p style={{ color: "red", marginBottom: 10 }}>
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: 10,
-            cursor: "pointer",
-          }}
-        >
-          {loading ? "Saving..." : "Continue"}
-        </button>
-      </form>
     </div>
   );
 };

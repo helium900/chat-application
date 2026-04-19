@@ -3,16 +3,16 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 
+import "./index.css"; // 🔥 CRITICAL: ADD THIS
 import App from "./App.jsx";
 import { store } from "./store/store";
-import { startPresenceListener } from "./store/presenceSlice";
-
+import { startPresenceListener, reEvaluatePresence } from "./store/presenceSlice";
+import { initDB } from "./utils/indexedDB"; // ✅ ADD THIS
 
 // ========================================
-// 🔥 START PRESENCE LISTENER (GLOBAL)
+// 🔥 INIT DB + START PRESENCE
 // ========================================
-store.dispatch(startPresenceListener());
-
+initDB(); // ✅ REQUIRED for message cache
 
 // ========================================
 // 🔥 RENDER APP

@@ -1,11 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { fetchUser } from "./userSlice";
+import { getChatsFromDB, saveChatsToDB } from "../utils/indexedDB";
 
 import {
   getUserChats,
   toggleBlockChat,
   togglePinChat,
   deleteChatForMe,
+  createChat as apiCreateChat,
 } from "../api/chatApi";
+
+
 
 
 // ========================================
@@ -13,9 +18,26 @@ import {
 // ========================================
 export const fetchChats = createAsyncThunk(
   "chats/fetchChats",
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
+      const localChats = await getChatsFromDB("default");
+      if (localChats && localChats.length > 0) {
+        dispatch(chatSlice.actions.setCachedChats(localChats));
+      }
+
       const res = await getUserChats();
+      
+      // Extract all unique user IDs from all chats
+      const userIds = new Set();
+      res.forEach(chat => {
+        (chat.members || []).forEach(id => userIds.add(id));
+      });
+      
+      // Dispatch fetchUser for each unique user so we have their avatars
+      userIds.forEach(id => dispatch(fetchUser(id)));
+      
+      await saveChatsToDB("default", res);
+
       return res; // res is now already the sorted array
     } catch (err) {
       return rejectWithValue(err.message || "Failed to fetch chats");
@@ -73,6 +95,22 @@ export const deleteForMe = createAsyncThunk(
 
 
 // ========================================
+// ✅ CREATE CHAT
+// ========================================
+export const startNewChat = createAsyncThunk(
+  "chats/startNewChat",
+  async (otherUserId, { rejectWithValue }) => {
+    try {
+      const res = await apiCreateChat(otherUserId);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message || "Failed to start chat");
+    }
+  }
+);
+
+
+// ========================================
 // 🔥 SLICE
 // ========================================
 const chatSlice = createSlice({
@@ -80,14 +118,36 @@ const chatSlice = createSlice({
   initialState: {
     chats: [],
     loading: false,
-    actionLoading: false, // for pin/block/delete
-    error: null,
-    backups: {}, // 🔄 Stores backups for optimistic UI rollbacks
+    actionLoading: false,
+    backups: {},
+    activeChatId: null,
   },
+
 
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    setActiveChat: (state, action) => {
+      state.activeChatId = action.payload;
+    },
+
+    setCachedChats: (state, action) => {
+      // Only set if we haven't loaded network data yet
+      if (state.chats.length === 0) {
+        state.chats = action.payload;
+      }
+    },
+    realtimeChatReceived: (state, action) => {
+      const chat = action.payload;
+      const index = state.chats.findIndex((c) => c.$id === chat.$id);
+      if (index !== -1) {
+        state.chats[index] = chat;
+      } else {
+        state.chats.unshift(chat);
+      }
+      // Re-sort chats by updatedAt
+      state.chats.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
     },
   },
 
@@ -223,7 +283,30 @@ const chatSlice = createSlice({
         }
       });
 
-}});
+    // ================= CREATE =================
+    builder
+      .addCase(startNewChat.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(startNewChat.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const newChat = action.payload;
+        // Check if chat already exists in list (avoid duplicates)
+        const exists = state.chats.find((c) => c.$id === newChat.$id);
+        if (!exists) {
+          state.chats.unshift(newChat);
+        }
+      })
+      .addCase(startNewChat.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload || action.error.message;
+      });
 
-export const { clearError } = chatSlice.actions;
+  },
+});
+
+
+export const { clearError, setCachedChats, realtimeChatReceived, setActiveChat } = chatSlice.actions;
+
 export default chatSlice.reducer;

@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
-  createUser,
   setUsername,
   getUserById,
 } from "../api/userApi";
@@ -15,15 +14,18 @@ import {
 // ========================================
 export const fetchUser = createAsyncThunk(
   "users/fetchUser",
-  async (userId) => {
-    const user = await getUserById(userId);
-
-    return {
-      userId: user.$id,
-      username: user.username,
-      avatarFileID: user.avatarFileID,
-      email: user.email,
-    };
+  async (userId, { rejectWithValue }) => {
+    try {
+      const user = await getUserById(userId);
+      return {
+        userId: user.$id,
+        username: user.username,
+        avatarFileID: user.avatarFileID,
+        lastSeen: user.lastSeen,
+      };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
   }
 );
 
@@ -99,7 +101,22 @@ const userSlice = createSlice({
     error: null,
   },
 
-  reducers: {},
+  reducers: {
+    updateUser: (state, action) => {
+      const { $id, username, avatarFileID, lastSeen } = action.payload;
+      if (state.users[$id]) {
+        state.users[$id] = {
+          ...state.users[$id],
+          username: username || state.users[$id].username,
+          avatarFileID: avatarFileID !== undefined ? avatarFileID : state.users[$id].avatarFileID,
+          lastSeen: lastSeen || state.users[$id].lastSeen,
+        };
+      } else {
+        // If user not in state, add them
+        state.users[$id] = { $id, username, avatarFileID, lastSeen };
+      }
+    },
+  },
 
   extraReducers: (builder) => {
 
@@ -108,6 +125,7 @@ const userSlice = createSlice({
       const { userId, username, avatarFileID, email } = action.payload;
 
       state.users[userId] = {
+        $id: userId, // ✅ Preserving ID for updates
         username,
         avatarFileID,
         email,
@@ -146,4 +164,5 @@ const userSlice = createSlice({
   },
 });
 
-export default userSlice.reducer;
+export const { updateUser } = userSlice.actions;
+export default userSlice.reducer;

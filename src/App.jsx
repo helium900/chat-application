@@ -1,9 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login";
-import Signup from "./pages/singup"; // Fix: The user named it singup.jsx
+import Signup from "./pages/signup"; // Fixed typo in filename
 import FetchChat from "./pages/chatPage/fetchChat";
 import SetUsername from "./pages/setUsername";
-import "./App.css";
 
 function App() {
   return (

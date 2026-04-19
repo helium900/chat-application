@@ -1,36 +1,31 @@
 import { databases } from "../appwriteConfig";
-import { Query } from "appwrite";
+import { Query, Permission, Role } from "appwrite";
 
 const DB_ID = "69d0f31d001e2eeda01b";
 const USER_COLLECTION = "users";
 
-
 export const createUser = async (user) => {
-    try {
-        return await databases.createDocument(
-            DB_ID,
-            USER_COLLECTION,
-            user.$id, //  auth ID = document ID
-            {
-                username: null,
-                email: user.email,
-                userID: user.$id,
-                lastSeen: Date.now(),
-                avatarFileID: null,
-            }
-        );
-    } catch (err) {
-        throw new Error(err.message);
-    }
+    return await databases.createDocument(
+        DB_ID,
+        USER_COLLECTION,
+        user.$id,
+        {
+            username: "",
+        },
+        [
+            Permission.read(Role.any()),
+            Permission.update(Role.user(user.$id)),
+            Permission.delete(Role.user(user.$id)),
+        ]
+    );
 };
-
 
 
 export const setUsername = async (userId, username) => {
     const normalized = username.trim().toLowerCase();
     if (!normalized) {
         throw new Error("Username cannot be empty");
-      }
+    }
 
     try {
         const res = await databases.updateDocument(
@@ -47,7 +42,7 @@ export const setUsername = async (userId, username) => {
     } catch (err) {
         if (err.code === 409) {
             throw new Error("Username already taken");
-          }
+        }
         throw new Error(err.message);
     }
 };
@@ -57,18 +52,30 @@ export const setUsername = async (userId, username) => {
 export const searchUser = async (username) => {
     try {
         const normalized = username.trim().toLowerCase();
-        if (!normalized) return []
+        if (!normalized) return [];
 
-        const res = await databases.listDocuments(
-            DB_ID,
-            USER_COLLECTION,
-            [Query.search("username", normalized), Query.limit(10)]
-        )
-
-        return res.documents;
+        // FALLBACK SEARCH: Try startsWith first, as it's more common than search (which requires fulltext)
+        try {
+            const res = await databases.listDocuments(
+                DB_ID,
+                USER_COLLECTION,
+                [Query.limit(10), Query.startsWith("username", normalized)]
+            );
+            return res.documents;
+        } catch (searchErr) {
+            console.warn("Search with startsWith failed, trying exact match fallback", searchErr.message);
+            // Last resort: exact match or just return empty
+            const res = await databases.listDocuments(
+                DB_ID,
+                USER_COLLECTION,
+                [Query.limit(10), Query.equal("username", normalized)]
+            );
+            return res.documents;
+        }
 
     } catch (err) {
-        throw new Error(err.message);
+        console.error("User search failed completely", err.message);
+        return []; // Return empty instead of throwing to prevent UI crash
     }
 };
 
@@ -79,7 +86,7 @@ export const getUserByUsername = async (username) => {
         const normalized = username.trim().toLowerCase();
         if (!normalized) {
             throw new Error("Username cannot be empty");
-          }
+        }
 
         const res = await databases.listDocuments(
             DB_ID,
@@ -110,4 +117,3 @@ export const getUserById = async (userID) => {
         throw new Error(err.message);
     }
 };
-
