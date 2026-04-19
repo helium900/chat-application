@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchUser } from "./userSlice";
 import { getChatsFromDB, saveChatsToDB } from "../utils/indexedDB";
-
 import {
   getUserChats,
   toggleBlockChat,
@@ -9,10 +8,6 @@ import {
   deleteChatForMe,
   createChat as apiCreateChat,
 } from "../api/chatApi";
-
-
-
-
 
 export const fetchChats = createAsyncThunk(
   "chats/fetchChats",
@@ -25,13 +20,11 @@ export const fetchChats = createAsyncThunk(
 
       const res = await getUserChats();
       
-     
       const userIds = new Set();
       res.forEach(chat => {
         (chat.members || []).forEach(id => userIds.add(id));
       });
       
-     
       userIds.forEach(id => dispatch(fetchUser(id)));
       
       await saveChatsToDB("default", res);
@@ -42,7 +35,6 @@ export const fetchChats = createAsyncThunk(
     }
   }
 );
-
 
 export const togglePin = createAsyncThunk(
   "chats/togglePin",
@@ -56,8 +48,6 @@ export const togglePin = createAsyncThunk(
   }
 );
 
-
-
 export const toggleBlock = createAsyncThunk(
   "chats/toggleBlock",
   async (chatId, { rejectWithValue }) => {
@@ -69,8 +59,6 @@ export const toggleBlock = createAsyncThunk(
     }
   }
 );
-
-
 
 export const deleteForMe = createAsyncThunk(
   "chats/deleteForMe",
@@ -84,7 +72,6 @@ export const deleteForMe = createAsyncThunk(
   }
 );
 
-
 export const startNewChat = createAsyncThunk(
   "chats/startNewChat",
   async (otherUserId, { rejectWithValue }) => {
@@ -97,8 +84,6 @@ export const startNewChat = createAsyncThunk(
   }
 );
 
-
-
 const chatSlice = createSlice({
   name: "chats",
   initialState: {
@@ -108,8 +93,6 @@ const chatSlice = createSlice({
     backups: {},
     activeChatId: null,
   },
-
-
   reducers: {
     clearError: (state) => {
       state.error = null;
@@ -117,9 +100,7 @@ const chatSlice = createSlice({
     setActiveChat: (state, action) => {
       state.activeChatId = action.payload;
     },
-
     setCachedChats: (state, action) => {
-    
       if (state.chats.length === 0) {
         state.chats = action.payload;
       }
@@ -132,14 +113,19 @@ const chatSlice = createSlice({
       } else {
         state.chats.unshift(chat);
       }
-    
       state.chats.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
     },
+    bumpChatTimestamp: (state, action) => {
+      const { chatId, updatedAt, lastMessage } = action.payload;
+      const index = state.chats.findIndex((c) => c.$id === chatId);
+      if (index !== -1) {
+        state.chats[index].updatedAt = updatedAt;
+        state.chats[index].lastMessage = lastMessage;
+        state.chats.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+      }
+    },
   },
-
   extraReducers: (builder) => {
-
- 
     builder
       .addCase(fetchChats.pending, (state) => {
         state.loading = true;
@@ -154,28 +140,21 @@ const chatSlice = createSlice({
         state.error = action.payload || action.error.message;
       });
 
-  
     builder
       .addCase(togglePin.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
-
-     
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
         }
-       
       })
       .addCase(togglePin.fulfilled, (state, action) => {
         state.actionLoading = false;
         const updatedChat = action.payload;
         const chatId = action.meta.arg;
-
-     
         delete state.backups[chatId];
-
         state.chats = state.chats.map((chat) =>
           chat.$id === updatedChat.$id ? updatedChat : chat
         );
@@ -184,8 +163,6 @@ const chatSlice = createSlice({
         state.actionLoading = false;
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
-
-     
         if (state.backups[chatId]) {
           state.chats = state.chats.map((chat) =>
             chat.$id === chatId ? state.backups[chatId] : chat
@@ -194,14 +171,11 @@ const chatSlice = createSlice({
         }
       });
 
-  
     builder
       .addCase(toggleBlock.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
-
-       
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
@@ -211,10 +185,7 @@ const chatSlice = createSlice({
         state.actionLoading = false;
         const updatedChat = action.payload;
         const chatId = action.meta.arg;
-
-    
         delete state.backups[chatId];
-
         state.chats = state.chats.map((chat) =>
           chat.$id === updatedChat.$id ? updatedChat : chat
         );
@@ -223,8 +194,6 @@ const chatSlice = createSlice({
         state.actionLoading = false;
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
-
-       
         if (state.backups[chatId]) {
           state.chats = state.chats.map((chat) =>
             chat.$id === chatId ? state.backups[chatId] : chat
@@ -233,14 +202,11 @@ const chatSlice = createSlice({
         }
       });
 
-
     builder
       .addCase(deleteForMe.pending, (state, action) => {
         state.actionLoading = true;
         state.error = null;
         const chatId = action.meta.arg;
-
-      
         const chatToBackup = state.chats.find((c) => c.$id === chatId);
         if (chatToBackup) {
           state.backups[chatId] = chatToBackup;
@@ -250,26 +216,19 @@ const chatSlice = createSlice({
       .addCase(deleteForMe.fulfilled, (state, action) => {
         state.actionLoading = false;
         const chatId = action.meta.arg;
-
-       
         delete state.backups[chatId];
-        
-       
         state.chats = state.chats.filter((chat) => chat.$id !== chatId);
       })
       .addCase(deleteForMe.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload || action.error.message;
         const chatId = action.meta.arg;
-
-        
         if (state.backups[chatId]) {
           state.chats.push(state.backups[chatId]);
           delete state.backups[chatId];
         }
       });
 
-  
     builder
       .addCase(startNewChat.pending, (state) => {
         state.actionLoading = true;
@@ -278,7 +237,6 @@ const chatSlice = createSlice({
       .addCase(startNewChat.fulfilled, (state, action) => {
         state.actionLoading = false;
         const newChat = action.payload;
-       
         const exists = state.chats.find((c) => c.$id === newChat.$id);
         if (!exists) {
           state.chats.unshift(newChat);
@@ -288,11 +246,9 @@ const chatSlice = createSlice({
         state.actionLoading = false;
         state.error = action.payload || action.error.message;
       });
-
   },
 });
 
-
-export const { clearError, setCachedChats, realtimeChatReceived, setActiveChat } = chatSlice.actions;
+export const { clearError, setCachedChats, realtimeChatReceived, setActiveChat, bumpChatTimestamp } = chatSlice.actions;
 
 export default chatSlice.reducer;
