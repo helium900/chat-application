@@ -43,7 +43,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center font-inter text-[var(--text-sub)] relative overflow-hidden" 
+<div className="min-h-screen w-full flex items-center justify-center font-inter text-[var(--text-sub)] relative"
       style={{ background: "radial-gradient(circle at top right, rgba(168, 85, 247, 0.15), transparent 400px), radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.15), transparent 400px), var(--bg-app)" }}>
       <div className="w-full max-w-[440px] bg-[var(--bg-card)] rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-12 border border-[var(--border-light)] animate-slide-up text-center relative z-10 backdrop-blur-xl">
 
