@@ -123,10 +123,15 @@ body {
     transform: translateX(-100%);
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.2);
     z-index: 100;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
   }
 
   .sidebar-fixed.open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .main-fixed {
