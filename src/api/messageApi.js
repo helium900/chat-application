@@ -1,4 +1,4 @@
-// api/messageApi.js
+
 
 import { databases, client, ID, account } from "../appwriteConfig";
 import { Query, Permission, Role } from "appwrite";
@@ -9,16 +9,14 @@ const MESSAGE_COLLECTION = "message";
 const CHAT_COLLECTION = "chats";
 
 
-// ========================================
-// ✅ SEND MESSAGE (UPDATED FOR MEMBERS)
-// ========================================
+
 export const sendMessage = async ({
   chatId,
   text = "",
   file = null,
 }) => {
   try {
-    // 🔐 Get authenticated user
+    
     if (!text && !file) {
       throw new Error("Message cannot be empty");
     }
@@ -26,7 +24,7 @@ export const sendMessage = async ({
     const user = await account.get();
     const senderId = user.$id;
 
-    // 🔥 Get chat (to access members)
+   
     const chat = await databases.getDocument(
       DB_ID,
       CHAT_COLLECTION,
@@ -36,7 +34,7 @@ export const sendMessage = async ({
     const members = chat.members || [];
     const blockedBy = chat.blockedUsers || [];
 
-    // 🚫 BLOCK CHECK: If any other member has blocked the chat, sender is blocked.
+   
     const isSenderBlocked = members.some(memberId => 
       memberId !== senderId && blockedBy.includes(memberId)
     );
@@ -45,7 +43,7 @@ export const sendMessage = async ({
       throw new Error("You cannot send messages to this user");
     }
 
-    // Also prevent the person who blocked from sending (optional, but consistent with UI hiding)
+   
     if (blockedBy.includes(senderId)) {
       throw new Error("You have blocked this user. Unblock to send messages.");
     }
@@ -54,27 +52,27 @@ export const sendMessage = async ({
     let fileId = "";
     let type = "text";
 
-    // 📁 Upload media with members (IMPORTANT FIX)
+  
     if (file) {
       const fileRes = await uploadMedia({
         file,
-        members, // ✅ FIXED (no receiverId)
+        members, 
       });
 
-      fileUrl = fileRes.data.url; // ✅ FIXED (url not previewUrl)
+      fileUrl = fileRes.data.url; 
       fileId = fileRes.data.fileId;
       type = fileRes.data.type;
     }
 
     const createdAt = new Date().toISOString();
 
-    // 🔐 Set permissions for all members
+
     const permissions = members.map(id => Permission.read(Role.user(id)));
-    // Allow sender to delete/update their own message
+ 
     permissions.push(Permission.update(Role.user(senderId)));
     permissions.push(Permission.delete(Role.user(senderId)));
 
-    // 🧠 Create message
+    
     const message = await databases.createDocument(
       DB_ID,
       MESSAGE_COLLECTION,
@@ -95,7 +93,7 @@ export const sendMessage = async ({
 
 
 
-    // 🔥 Update chat metadata (Fail gracefully if permissions are blocking)
+   
     try {
       await databases.updateDocument(DB_ID, CHAT_COLLECTION, chatId, {
         updatedAt: createdAt,
@@ -113,9 +111,7 @@ export const sendMessage = async ({
 
 
 
-// ========================================
-// ✅ GET MESSAGES (NO CHANGE)
-// ========================================
+
 export const getMessages = async (chatId, lastMessageId = null) => {
   try {
     const queries = [
@@ -142,9 +138,7 @@ export const getMessages = async (chatId, lastMessageId = null) => {
 
 
 
-// ========================================
-// ✅ REAL-TIME SUBSCRIPTION (NO CHANGE)
-// ========================================
+
 export const subscribeToMessages = (chatId, callback) => {
   const unsubscribe = client.subscribe(
     `databases.${DB_ID}.collections.${MESSAGE_COLLECTION}.documents`,
@@ -165,7 +159,7 @@ export const subscribeToMessages = (chatId, callback) => {
   return unsubscribe;
 };
 
-// Listen to all messages in the collection (for global unread counts)
+
 export const subscribeToAllMessages = (callback) => {
   const unsubscribe = client.subscribe(
     `databases.${DB_ID}.collections.${MESSAGE_COLLECTION}.documents`,
@@ -187,9 +181,6 @@ export const subscribeToAllMessages = (callback) => {
 
 
 
-// ========================================
-// ✅ DELETE MESSAGE (NO CHANGE)
-// ========================================
 export const deleteMessage = async (messageId) => {
   try {
     const user = await account.get();
@@ -228,4 +219,4 @@ export const deleteMessage = async (messageId) => {
 
 
 
-
+
