@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getMessages, sendMessage } from "../api/messageApi";
 
-
 export const fetchMessages = createAsyncThunk(
   "messages/fetchMessages",
   async ({ chatId, lastMessageId }, { rejectWithValue }) => {
@@ -13,7 +12,6 @@ export const fetchMessages = createAsyncThunk(
     }
   }
 );
-
 
 export const sendMessageThunk = createAsyncThunk(
   "messages/sendMessage",
@@ -27,16 +25,14 @@ export const sendMessageThunk = createAsyncThunk(
   }
 );
 
-
 const messageSlice = createSlice({
   name: "messages",
   initialState: {
-    messagesByChat: {}, 
+    messagesByChat: {},
     loading: false,
     error: null,
   },
   reducers: {
-    
     realtimeMessageReceived: (state, action) => {
       const message = action.payload;
       const chatId = message.chatId;
@@ -62,7 +58,6 @@ const messageSlice = createSlice({
         }
       }
 
-      
       state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     },
     clearError: (state) => {
@@ -71,7 +66,6 @@ const messageSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-     
       .addCase(fetchMessages.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -91,7 +85,6 @@ const messageSlice = createSlice({
           state.messagesByChat[chatId] = messages;
         }
 
-       
         state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       })
       .addCase(fetchMessages.rejected, (state, action) => {
@@ -100,13 +93,11 @@ const messageSlice = createSlice({
           action.payload || action.error?.message || "Failed to fetch messages";
       })
 
-     
       .addCase(sendMessageThunk.pending, (state, action) => {
         state.loading = true;
         state.error = null;
         const { chatId, text, file } = action.meta.arg;
 
-        
         const tempId = `temp-${Date.now()}`;
         if (!state.messagesByChat[chatId]) {
           state.messagesByChat[chatId] = [];
@@ -115,7 +106,7 @@ const messageSlice = createSlice({
           $id: tempId,
           chatId,
           text,
-          file, 
+          file,
           type: file ? "file" : "text",
           status: "sending",
           createdAt: new Date().toISOString(),
@@ -140,7 +131,6 @@ const messageSlice = createSlice({
               state.messagesByChat[chatId].push(message);
             }
           }
-          
           state.messagesByChat[chatId].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         }
       })
@@ -149,7 +139,6 @@ const messageSlice = createSlice({
         state.error = action.payload || action.error?.message || "Failed to send message";
         const { chatId } = action.meta.arg;
 
-        
         if (state.messagesByChat[chatId]) {
           const tempIndex = state.messagesByChat[chatId].findLastIndex(m => m.status === "sending");
           if (tempIndex !== -1) {
