@@ -44,6 +44,7 @@ const FetchChat = () => {
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleVisibilityChange);
 
     return () => {
       stopChatListener();
@@ -52,6 +53,7 @@ const FetchChat = () => {
       stopUserListener();
       stopPresence();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleVisibilityChange);
     };
   }, [dispatch]);
 
