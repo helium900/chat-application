@@ -118,4 +118,71 @@ const messageSlice = createSlice({
         const { chatId, text, file } = action.meta.arg;
 
         const tempId = `temp-${Date.now()}`;
-        if (!state.messagesByChat
+        if (!state.messagesByChat[chatId]) {
+          state.messagesByChat[chatId] = [];
+        }
+        state.messagesByChat[chatId].push({
+          $id: tempId,
+          chatId,
+          text,
+          file,
+          type: file ? "file" : "text",
+          status: "sending",
+          createdAt: new Date().toISOString(),
+          senderId: "me",
+        });
+      })
+      .addCase(sendMessageThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const { chatId, message } = action.payload;
+
+        if (state.messagesByChat[chatId]) {
+          const existingRealtimeIndex = state.messagesByChat[chatId].findIndex(m => m.$id === message.$id);
+
+          if (existingRealtimeIndex !== -1) {
+            state.messagesByChat[chatId][existingRealtimeIndex] = message;
+          } else {
+            const tempIndex = state.messagesByChat[chatId].findIndex(m => m.status === "sending" && m.text === message.text);
+            if (tempIndex !== -1) {
+              state.messagesByChat[chatId][tempIndex] = message;
+            } else {
+              state.messagesByChat[chatId].push(message);
+            }
+          }
+          state.messagesByChat[chatId].sort((a, b) => {
+            const timeA = new Date(a.createdAt).getTime() || 0;
+            const timeB = new Date(b.createdAt).getTime() || 0;
+            return timeA - timeB;
+          });
+        }
+      })
+      .addCase(sendMessageThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || action.error?.message || "Failed to send message";
+        const { chatId } = action.meta.arg;
+
+        if (state.messagesByChat[chatId]) {
+          const tempIndex = state.messagesByChat[chatId].findLastIndex(m => m.status === "sending");
+          if (tempIndex !== -1) {
+            state.messagesByChat[chatId][tempIndex].status = "failed";
+          }
+        }
+      })
+      .addCase(deleteMessageThunk.fulfilled, (state, action) => {
+        const { messageId, chatId } = action.payload;
+        if (state.messagesByChat[chatId]) {
+          const msg = state.messagesByChat[chatId].find(m => m.$id === messageId);
+          if (msg) {
+            msg.deleted = true;
+            msg.text = "This message was deleted";
+            msg.fileUrl = "";
+            msg.fileId = "";
+          }
+        }
+      });
+  },
+});
+
+export const { realtimeMessageReceived, clearError } = messageSlice.actions;
+export default messageSlice.reducer;
