@@ -57,7 +57,10 @@ export const sendMessage = async ({
 
     const createdAt = new Date().toISOString();
 
-    const permissions = members.map(id => Permission.read(Role.user(id)));
+    const permissions = members
+      .filter(id => id === senderId || !blockedBy.includes(id))
+      .map(id => Permission.read(Role.user(id)));
+      
     permissions.push(Permission.update(Role.user(senderId)));
     permissions.push(Permission.delete(Role.user(senderId)));
 
@@ -79,14 +82,16 @@ export const sendMessage = async ({
       }
     );
 
-    try {
-      await databases.updateDocument(DB_ID, CHAT_COLLECTION, chatId, {
-        updatedAt: createdAt,
-        lastMessage: text || type,
-        hiddenFor: [], // <--- THIS FIXES THE BUG
-      });
-    } catch (updateErr) {
-      console.warn("Could not update chat metadata, probably missing update permissions:", updateErr.message);
+    if (!isSenderBlocked) {
+      try {
+        await databases.updateDocument(DB_ID, CHAT_COLLECTION, chatId, {
+          updatedAt: createdAt,
+          lastMessage: text || type,
+          hiddenFor: [],
+        });
+      } catch (updateErr) {
+        console.warn("Could not update chat metadata, probably missing update permissions:", updateErr.message);
+      }
     }
 
     return { data: message };
@@ -125,10 +130,11 @@ export const subscribeToMessages = (chatId, callback) => {
     (response) => {
       const message = response.payload;
 
+      const isCreate = response.events.some(event => event.includes(".create"));
+      const isUpdate = response.events.some(event => event.includes(".update"));
+
       if (
-        response.events.includes(
-          "databases.*.collections.*.documents.*.create"
-        ) &&
+        (isCreate || isUpdate) &&
         message.chatId === chatId
       ) {
         callback(message);
@@ -145,11 +151,10 @@ export const subscribeToAllMessages = (callback) => {
     (response) => {
       const message = response.payload;
 
-      if (
-        response.events.includes(
-          "databases.*.collections.*.documents.*.create"
-        )
-      ) {
+      const isCreate = response.events.some(event => event.includes(".create"));
+      const isUpdate = response.events.some(event => event.includes(".update"));
+
+      if (isCreate || isUpdate) {
         callback(message);
       }
     }
