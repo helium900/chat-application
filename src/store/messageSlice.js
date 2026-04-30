@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getMessages, sendMessage } from "../api/messageApi";
+import { getMessages, sendMessage, deleteMessage } from "../api/messageApi";
 
 export const fetchMessages = createAsyncThunk(
   "messages/fetchMessages",
@@ -19,6 +19,18 @@ export const sendMessageThunk = createAsyncThunk(
     try {
       const res = await sendMessage({ chatId, text, file });
       return { chatId, message: res.data };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const deleteMessageThunk = createAsyncThunk(
+  "messages/deleteMessage",
+  async ({ messageId, chatId }, { rejectWithValue }) => {
+    try {
+      await deleteMessage(messageId);
+      return { messageId, chatId };
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -100,66 +112,10 @@ const messageSlice = createSlice({
         state.error =
           action.payload || action.error?.message || "Failed to fetch messages";
       })
-
       .addCase(sendMessageThunk.pending, (state, action) => {
         state.loading = true;
         state.error = null;
         const { chatId, text, file } = action.meta.arg;
 
         const tempId = `temp-${Date.now()}`;
-        if (!state.messagesByChat[chatId]) {
-          state.messagesByChat[chatId] = [];
-        }
-        state.messagesByChat[chatId].push({
-          $id: tempId,
-          chatId,
-          text,
-          file, 
-          type: file ? "file" : "text",
-          status: "sending",
-          createdAt: new Date().toISOString(),
-          senderId: "me",
-        });
-      })
-      .addCase(sendMessageThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.error = null;
-        const { chatId, message } = action.payload;
-
-        if (state.messagesByChat[chatId]) {
-          const existingRealtimeIndex = state.messagesByChat[chatId].findIndex(m => m.$id === message.$id);
-          
-          if (existingRealtimeIndex !== -1) {
-            state.messagesByChat[chatId][existingRealtimeIndex] = message;
-          } else {
-            const tempIndex = state.messagesByChat[chatId].findIndex(m => m.status === "sending" && m.text === message.text);
-            if (tempIndex !== -1) {
-              state.messagesByChat[chatId][tempIndex] = message;
-            } else {
-              state.messagesByChat[chatId].push(message);
-            }
-          }
-          state.messagesByChat[chatId].sort((a, b) => {
-            const timeA = new Date(a.createdAt).getTime() || 0;
-            const timeB = new Date(b.createdAt).getTime() || 0;
-            return timeA - timeB;
-          });
-        }
-      })
-      .addCase(sendMessageThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || action.error?.message || "Failed to send message";
-        const { chatId } = action.meta.arg;
-
-        if (state.messagesByChat[chatId]) {
-          const tempIndex = state.messagesByChat[chatId].findLastIndex(m => m.status === "sending");
-          if (tempIndex !== -1) {
-            state.messagesByChat[chatId][tempIndex].status = "failed";
-          }
-        }
-      });
-  },
-});
-
-export const { realtimeMessageReceived, clearError } = messageSlice.actions;
-export default messageSlice.reducer;
+        if (!state.messagesByChat
