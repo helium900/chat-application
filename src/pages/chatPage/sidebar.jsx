@@ -47,7 +47,7 @@ const Sidebar = ({ selectedChatId, setSelectedChatId }) => {
       const bPinned = b.pinnedBy?.includes(currentUserId);
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
-      return new Date(b.lastMessageAt || b.$updatedAt || 0) - new Date(a.lastMessageAt || a.$updatedAt || 0);
+       return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
     });
   }, [filteredChats, currentUserId]);
 
