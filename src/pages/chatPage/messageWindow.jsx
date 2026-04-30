@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchMessages, sendMessageThunk, clearError } from "../../store/messageSlice";
+import { fetchMessages, sendMessageThunk, clearError, deleteMessageThunk } from "../../store/messageSlice";
 import { startMessageListener, stopMessageListener } from "../../store/messageListener";
 import { togglePin, toggleBlock } from "../../store/chatSlice";
 import { getAvatarUrl } from "../../api/avatarApi";
@@ -20,8 +20,17 @@ const MessageWindow = ({ chatId, onBack }) => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
+  const [openMenuId, setOpenMenuId] = useState(null);
+
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
+
+ 
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     account.get().then((user) => setCurrentUserId(user.$id));
@@ -37,6 +46,7 @@ const MessageWindow = ({ chatId, onBack }) => {
 
     setupConnection();
 
+   
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         setupConnection();
@@ -58,7 +68,7 @@ const MessageWindow = ({ chatId, onBack }) => {
       }
     }, 150);
     return () => clearTimeout(timer);
-  }, [messages]);
+  }, [messages.length]);
 
   useEffect(() => {
     if (messageError) {
@@ -103,14 +113,14 @@ const MessageWindow = ({ chatId, onBack }) => {
       <header className="h-20 flex-shrink-0 flex items-center justify-between px-4 lg:px-10 z-20" style={{ background: "rgba(10,10,12,0.8)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border-light)" }}>
         <div className="flex items-center gap-1 lg:gap-4">
           {onBack && (
-            <button 
-              onClick={onBack} 
+            <button
+              onClick={onBack}
               className="lg:hidden p-2 -ml-2 text-2xl hover:bg-white/5 rounded-full transition-colors"
             >
               ⬅️
             </button>
           )}
-          <div 
+          <div
             className="flex items-center gap-3 lg:gap-4 cursor-pointer p-2 rounded-xl transition-all"
             style={{ borderRadius: "12px" }}
             onClick={() => setIsUserModalOpen(true)}
@@ -124,23 +134,23 @@ const MessageWindow = ({ chatId, onBack }) => {
                 className="w-11 h-11 rounded-2xl object-cover shadow-sm"
                 style={{ border: "2px solid var(--border-light)" }}
               />
-              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-black rounded-full transition-colors duration-500 ${
-                onlineUsers[otherUserId] === "online" ? "bg-green-500" : "bg-zinc-700"
-              }`}></div>
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-black rounded-full transition-colors duration-500 ${onlineUsers[otherUserId] === "online" ? "bg-green-500" : "bg-zinc-700"
+                }`}></div>
             </div>
             <div>
               <h3 className="text-base font-bold leading-tight" style={{ color: "var(--text-main)" }}>{user.username || "User"}</h3>
-              <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500" 
+              <p className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-500"
                 style={{ color: onlineUsers[otherUserId] === "online" ? "#22c55e" : "var(--text-muted)" }}
               >
                 {onlineUsers[otherUserId] === "online" ? "Online" : "Offline"}
+
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={() => dispatch(togglePin(chatId))}
             className="p-2.5 rounded-lg transition-all"
             style={isPinned ? { color: "var(--primary)", background: "var(--primary-light)" } : { color: "var(--text-muted)" }}
@@ -149,7 +159,7 @@ const MessageWindow = ({ chatId, onBack }) => {
           >
             <span className="text-2xl">📌</span>
           </button>
-          <button 
+          <button
             onClick={() => dispatch(toggleBlock(chatId))}
             className="p-2.5 rounded-lg transition-all"
             style={isBlocked ? { color: "#ef4444", background: "rgba(239, 68, 68, 0.1)" } : { color: "var(--text-muted)" }}
@@ -168,10 +178,44 @@ const MessageWindow = ({ chatId, onBack }) => {
         {messages.map((msg) => {
           const isMe = msg.senderId === currentUserId || msg.senderId === "me";
           return (
-            <div key={msg.$id} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-slide-up`}>
+            <div key={msg.$id} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-slide-up relative`}>
               <div className={`group relative max-w-[75%] lg:max-w-[60%] ${isMe ? "items-end" : "items-start"} flex flex-col gap-1.5`}>
-                <div 
-                  className="px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed shadow-sm"
+                
+                {/* 3-Dot Menu Button */}
+                {isMe && !msg.deleted && msg.status !== "sending" && msg.status !== "failed" && (
+                  <div className="absolute top-1/2 -translate-y-1/2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === msg.$id ? null : msg.$id)}
+                      className="p-1.5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-full transition-colors"
+                      title="More Options"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                      </svg>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    {openMenuId === msg.$id && (
+                      <div className="absolute right-8 top-0 mt-1 w-28 bg-[#18181b] border border-zinc-800 rounded-lg shadow-xl overflow-hidden py-1 z-50 animate-slide-up">
+                        <button
+                          onClick={() => {
+                            dispatch(deleteMessageThunk({ messageId: msg.$id, chatId }));
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div
+                  className="px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed shadow-sm relative"
                   style={isMe ? {
                     background: "linear-gradient(135deg, var(--primary), var(--accent))",
                     color: "white",
@@ -205,7 +249,7 @@ const MessageWindow = ({ chatId, onBack }) => {
                           <span className="text-[10px] font-bold text-red-100 opacity-80 flex items-center gap-1">
                             ⚠️ Failed
                           </span>
-                          <button 
+                          <button
                             onClick={() => dispatch(sendMessageThunk({ chatId, text: msg.text, file: msg.file }))}
                             className="text-[10px] font-black uppercase tracking-widest bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
                           >
@@ -255,7 +299,7 @@ const MessageWindow = ({ chatId, onBack }) => {
                 <button onClick={() => setFile(null)} className="font-bold" style={{ color: "var(--text-muted)" }}>✕</button>
               </div>
             )}
-            
+
             <div className="flex items-end gap-3 rounded-2xl p-2 transition-all" style={{ background: "var(--primary-soft)", border: "1px solid var(--border-light)" }}>
               <label className="p-2.5 cursor-pointer transition-colors rounded-xl text-xl flex-shrink-0" style={{ color: "var(--text-muted)" }}
                 onMouseEnter={e => e.currentTarget.style.background = "var(--border-light)"}
@@ -279,8 +323,8 @@ const MessageWindow = ({ chatId, onBack }) => {
                 }}
               />
 
-              <button 
-                onClick={handleSend} 
+              <button
+                onClick={handleSend}
                 disabled={!text && !file}
                 className="p-3 rounded-xl transition-all active:scale-95 flex items-center justify-center flex-shrink-0"
                 style={{ background: (!text && !file) ? "var(--border-light)" : "linear-gradient(135deg, var(--primary), var(--accent))", color: "white" }}
@@ -294,10 +338,10 @@ const MessageWindow = ({ chatId, onBack }) => {
       </footer>
 
       {isUserModalOpen && (
-        <UserModal 
-          user={user} 
-          onClose={() => setIsUserModalOpen(false)} 
-          hideAction={true} 
+        <UserModal
+          user={user}
+          onClose={() => setIsUserModalOpen(false)}
+          hideAction={true}
         />
       )}
     </div>
